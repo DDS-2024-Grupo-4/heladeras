@@ -1,0 +1,89 @@
+name: Autograding Tests
+'on':
+  - push
+  - workflow_dispatch
+  - repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'oracle'
+          java-version: '17'
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: mvn clean install
+
+      - name: MVN Test
+        id: mvn-test
+        uses: education/autograding-command-grader@v1
+        with:
+          test-name: MVN Test
+          setup-command: mvn clean test-compile
+          command: mvn test
+          timeout: 10
+          max-score: 1
+      - name: Enciende el WebApp
+        id: start-webapp
+        run: |
+          mvn exec:java -Dexec.mainClass="ar.edu.utn.dds.k3003.app.WebApp" &
+          echo "WebApp Server PID=$!" >> $GITHUB_ENV
+        env:
+          MAVEN_OPTS: -Dmaven.repo.local=.m2/repository
+      - name: Espera que el WebApp esté levantado
+        run: |
+          timeout 60 sh -c 'until curl --output /dev/null --silent --head --fail http://localhost:8080; do
+            printf "."
+            sleep 5
+          done'
+      - name: Evaluador de Entrega 1
+        id: evaluator
+        uses: education/autograding-command-grader@v1
+        with:
+          test-name: Evaluator
+          setup-command: mvn clean compile
+          command: mvn exec:java -Dexec.mainClass="ar.edu.utn.dds.k3003.Evaluador"
+          timeout: 10
+          max-score: 4
+      - name: Determinar el tipo de fachada
+        run: |
+          if grep -q 'public class Fachada implements FachadaLogistica' src/main/java/ar/edu/utn/dds/k3003/app/Fachada.java; then
+            echo "EVALUATOR_API_ARG=logistica" >> $GITHUB_ENV
+          elif grep -q 'public class Fachada implements FachadaHeladeras' src/main/java/ar/edu/utn/dds/k3003/app/Fachada.java; then
+            echo "EVALUATOR_API_ARG=heladeras" >> $GITHUB_ENV
+          elif grep -q 'public class Fachada implements FachadaColaboradores' src/main/java/ar/edu/utn/dds/k3003/app/Fachada.java; then
+            echo "EVALUATOR_API_ARG=colaboradores" >> $GITHUB_ENV
+          elif grep -q 'public class Fachada implements FachadaViandas' src/main/java/ar/edu/utn/dds/k3003/app/Fachada.java; then
+            echo "EVALUATOR_API_ARG=viandas" >> $GITHUB_ENV
+          else
+            echo "EVALUATOR_API_ARG=error" >> $GITHUB_ENV
+          fi
+        shell: bash
+      - name: Evaluador de Entrega 2
+        id: evaluatorapi
+        uses: education/autograding-command-grader@v1
+        with:
+          test-name: EvaluatorAPI
+          setup-command: mvn clean compile
+          command: mvn exec:java -Dexec.mainClass="ar.edu.utn.dds.k3003.EvaluadorAPI" -Dexec.args="http://localhost:8080 ${{ env.EVALUATOR_API_ARG }}"
+          timeout: 10
+          max-score: 1
+
+      - name: Autograding Reporter
+        uses: education/autograding-grading-reporter@v1
+        env:
+          MVN-TEST_RESULTS: "${{steps.mvn-test.outputs.result}}"
+          EVALUATOR_RESULTS: "${{steps.evaluator.outputs.result}}"
+          EVALUATORAPI_RESULTS: "${{steps.evaluatorapi.outputs.result}}"
+        with:
+          runners: mvn-test,evaluator,evaluatorapi
