@@ -14,13 +14,15 @@
         <class>ar.edu.utn.dds.k3003.model.Temperatura</class>
 
         <properties>
-            <property name="hibernate.hbm2ddl.auto" value="create"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
             <property name="hibernate.connection.pool_size" value="10" />
             <property name="hibernate.archive.autodetection" value="class" />
             <property name="hibernate.show_sql" value="true" />
             <property name="hibernate.format_sql" value="true" />
             <property name="use_sql_comments" value="true" />
-            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
+            <property name="hibernate.connection.url" value="jdbc:postgresql://pg-3b2-frba-95ae.i.aivencloud.com:17556/defaultdb"/>
+
         </properties>
 
     </persistence-unit>
