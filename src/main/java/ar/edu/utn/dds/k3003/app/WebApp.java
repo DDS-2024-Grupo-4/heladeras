@@ -28,7 +28,7 @@ public class WebApp {
 
     public static EntityManagerFactory entityManagerFactory;
     public static Channel channel;
-
+    public static Javalin app;
 
     public static void main(String[] args) throws IOException, TimeoutException {
 
@@ -39,7 +39,7 @@ public class WebApp {
         fachada.setViandasProxy(new ViandasProxy(objectMapper));
         var port = Integer.parseInt(dotenv.get("PORT"));
 
-        var app = Javalin.create(config -> {
+        app = Javalin.create(config -> {
             config.jsonMapper(new JavalinJackson().updateMapper(mapper -> {
                 configureObjectMapper(mapper);
             }));

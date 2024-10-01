@@ -1,6 +1,7 @@
 package ar.edu.utn.dds.k3003.controller;
 
 import ar.edu.utn.dds.k3003.app.Fachada;
+import ar.edu.utn.dds.k3003.utils.utilsMetrics;
 import ar.edu.utn.dds.k3003.facades.dtos.HeladeraDTO;
 import ar.edu.utn.dds.k3003.facades.dtos.RetiroDTO;
 import ar.edu.utn.dds.k3003.facades.dtos.TemperaturaDTO;
@@ -58,6 +59,7 @@ public class HeladeraController{
                 context.status(HttpStatus.NOT_FOUND);
                 context.result("Heladera no encontrada :c");
             }
+            utilsMetrics.enviarNuevaAperuraDeHeladera(depositoDTO.getHeladeraId());
             fachada.depositar(depositoDTO.getHeladeraId(), depositoDTO.getCodigoQR());
             context.status(HttpStatus.OK);
             context.result("Vianda depositada correctamente");
@@ -72,6 +74,11 @@ public class HeladeraController{
     public void retirarVianda(@NotNull Context context){
         try{
             RetiroDTO retiroDTO = context.bodyAsClass(RetiroDTO.class);
+            if (!fachada.existeHeladera(retiroDTO.getHeladeraId())) {
+                context.status(HttpStatus.NOT_FOUND);
+                context.result("Heladera no encontrada :c");
+            }
+            utilsMetrics.enviarNuevaAperuraDeHeladera(retiroDTO.getHeladeraId());
             fachada.retirar(retiroDTO);
             context.status(HttpStatus.OK);
             context.result("Vianda retirada exitosamente");
