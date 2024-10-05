@@ -28,4 +28,48 @@ public class utilsMetrics {
           throw new RuntimeException("Error durante la llamada a la API", e);
         });
   }
+
+  public static void enviarExcesoTemperaturaHeladera(Integer heladeraId) {
+    Dotenv dotenv = Dotenv.load();
+    var url = dotenv.get("URL_METRICS");
+    url = url +"/excesoTemperaturaHeladera/"+ heladeraId;
+    HttpClient client = HttpClient.newHttpClient();
+
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create(url))
+        .GET()
+        .build();
+
+    client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        .thenAccept(response -> {
+          if (!(response.statusCode() == 200)) {
+            throw new RuntimeException("Error en la respuesta: " + response.statusCode());
+          }
+        })
+        .exceptionally(e -> {
+          throw new RuntimeException("Error durante la llamada a la API", e);
+        });
+  }
+
+  public static void enviarConsultaNuevaDeHeladera() {
+    Dotenv dotenv = Dotenv.load();
+    var url = dotenv.get("URL_METRICS");
+    url = url +"/consultaHeladera";
+    HttpClient client = HttpClient.newHttpClient();
+
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create(url))
+        .GET()
+        .build();
+
+    client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        .thenAccept(response -> {
+          if (!(response.statusCode() == 200)) {
+            throw new RuntimeException("Error en la respuesta: " + response.statusCode());
+          }
+        })
+        .exceptionally(e -> {
+          throw new RuntimeException("Error durante la llamada a la API", e);
+        });
+  }
 }

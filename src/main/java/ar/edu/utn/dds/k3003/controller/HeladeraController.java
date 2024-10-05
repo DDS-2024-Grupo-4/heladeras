@@ -40,6 +40,7 @@ public class HeladeraController{
             String heladeraIdParam = context.pathParam("heladeraId");
             Integer heladeraId = Integer.valueOf(heladeraIdParam);
             var heladeraDTO = fachada.obtenerHeladera(heladeraId);
+            utilsMetrics.enviarConsultaNuevaDeHeladera();
             context.json(heladeraDTO);
             context.status(HttpStatus.OK);
         } catch (NoSuchElementException e) {

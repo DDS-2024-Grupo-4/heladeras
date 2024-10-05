@@ -4,6 +4,7 @@ import ar.edu.utn.dds.k3003.facades.FachadaViandas;
 import ar.edu.utn.dds.k3003.facades.dtos.*;
 import ar.edu.utn.dds.k3003.model.Heladera;
 import ar.edu.utn.dds.k3003.model.SensorTemperatura;
+import ar.edu.utn.dds.k3003.utils.utilsMetrics;
 import ar.edu.utn.dds.k3003.utils.utilsPublisher;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -189,6 +190,10 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
 
             entityManager.merge(sensor);
             entityManager.getTransaction().commit();
+
+            if (heladera.getTemperaturaMaxima() < temperaturaDTO.getTemperatura()) {
+                utilsMetrics.enviarExcesoTemperaturaHeladera(heladera.getHeladeraId());
+            }
 
         }catch (Exception e){
             if (entityManager.getTransaction().isActive()) {
