@@ -3,7 +3,7 @@
 
 Template para TP DDS 2024 - Entrega 3
 
-[Render](https://two024-tp-entrega-3-oviedofranc.onrender.com)
+[Render](https://heladeras-tlcz.onrender.com)
 
 # Endpoints
 
