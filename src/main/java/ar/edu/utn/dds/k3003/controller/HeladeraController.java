@@ -8,9 +8,12 @@ import ar.edu.utn.dds.k3003.facades.dtos.TemperaturaDTO;
 import ar.edu.utn.dds.k3003.model.DTO.DepositoDTO;
 import ar.edu.utn.dds.k3003.model.DTO.GetErrorHeladeraDTO;
 import ar.edu.utn.dds.k3003.utils.utilsHeladera;
+import ar.edu.utn.dds.k3003.utils.utilsPublisher;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -91,16 +94,43 @@ public class HeladeraController{
         }
     }
 
-    public void registrarTemperatura(@NotNull Context context){
-        try{
-            fachada.temperatura(context.bodyAsClass(TemperaturaDTO.class));
+    public void registrarTemperaturaEnCola(@NotNull Context context){
+        try {
+            TemperaturaDTO temperaturaDTO = context.bodyAsClass(TemperaturaDTO.class);
+            //validacion
+            if (temperaturaDTO.getHeladeraId() == null || temperaturaDTO.getTemperatura() == null) {
+                context.status(HttpStatus.BAD_REQUEST);
+                context.result("Heladera ID y Temperatura son obligatorios.");
+                return;
+            }
+
+            // Formato del mensaje
+            String mensaje = String.format("Heladera %d - Temperatura %d°C",
+                temperaturaDTO.getHeladeraId(),
+                temperaturaDTO.getTemperatura());
+
+            // Publicar el mensaje en la cola
+            utilsPublisher.pushMessageQueue(mensaje);
+
+            // Responder al cliente
             context.status(HttpStatus.OK);
-            context.result("Temperatura registrada correctamente");
+            context.result("Temperatura registrada correctamente.");
+
+        } catch (IOException e) {
+            context.status(HttpStatus.INTERNAL_SERVER_ERROR);
+            context.result("Error al procesar la solicitud: " + e.getMessage());
+        } catch (Exception e) {
+            context.status(HttpStatus.INTERNAL_SERVER_ERROR);
+            context.result("Error inesperado: " + e.getMessage());
+        }
+    }
+
+    public void registrarTemperatura(TemperaturaDTO temperaturaDTO) {
+        try{
+            fachada.temperatura(temperaturaDTO);
         }
         catch(NoSuchElementException e){
-            context.result(e.getLocalizedMessage());
-            context.status(HttpStatus.BAD_REQUEST);
-            context.result("Error de solicitud");
+            System.out.println(e.getLocalizedMessage());
         }
     }
 

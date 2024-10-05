@@ -3,6 +3,7 @@ package ar.edu.utn.dds.k3003.app;
 import ar.edu.utn.dds.k3003.controller.HeladeraController;
 import ar.edu.utn.dds.k3003.clients.ViandasProxy;
 import ar.edu.utn.dds.k3003.facades.dtos.Constants;
+import ar.edu.utn.dds.k3003.facades.dtos.TemperaturaDTO;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DeliverCallback;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
@@ -18,6 +20,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -53,10 +56,11 @@ public class WebApp {
         app.get("/heladeras/{heladeraId}", heladeraController::obtenerHeladera);
         app.post("/depositos", heladeraController::depositarVianda);
         app.post("/retiros", heladeraController::retirarVianda);
-        app.post("/temperaturas", heladeraController::registrarTemperatura);
+        app.post("/temperaturasEnCola/registrar", heladeraController::registrarTemperaturaEnCola);
         app.get("/heladeras/{heladeraId}/temperaturas", heladeraController::obtenerTemperaturas);
 
         channel = initialCloudAMQPTopicConfiguration();
+        setupConsumer(heladeraController);
     }
 
     public static ObjectMapper createObjectMapper() {
@@ -93,6 +97,37 @@ public class WebApp {
         factory.setVirtualHost(dotenv.get("VHOST"));
         Connection connection = factory.newConnection();
         return connection.createChannel();
+    }
+
+    private static void setupConsumer(HeladeraController heladeraController) throws IOException {
+        Dotenv dotenv = Dotenv.load();
+        String QUEUE = dotenv.get("QUEUE_NAME");
+        channel.queueDeclare(QUEUE, false, false, false, null);
+        System.out.println("Esperando mensajes en la cola " + QUEUE);
+
+        // PROCESAMIENTO DE LOS MENSAJES
+        DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+            String message = new String(delivery.getBody(), "UTF-8");
+
+            String[] parts = message.split(" - ");
+            if (parts.length == 2) {
+                String heladeraPart = parts[0]; // "Heladera X"
+                String temperaturaPart = parts[1]; // "Temperatura Y°C"
+
+                // Extraigo los valores de los mensajes
+                int heladeraId = Integer.parseInt(heladeraPart.split(" ")[1]);
+                Integer temperatura = Integer.parseInt(temperaturaPart.split(" ")[1].replace("°C", ""));
+
+                TemperaturaDTO temperaturaDTO = new TemperaturaDTO(temperatura, heladeraId, LocalDateTime.now());
+
+                System.out.println("Processed TemperaturaDTO: " + temperaturaDTO);
+                heladeraController.registrarTemperatura(temperaturaDTO);
+            } else {
+                System.err.println("Formato de mensaje incorrecto: " + message);
+            }
+
+        };
+        channel.basicConsume(QUEUE, true, deliverCallback, consumerTag -> { });
     }
 
 }

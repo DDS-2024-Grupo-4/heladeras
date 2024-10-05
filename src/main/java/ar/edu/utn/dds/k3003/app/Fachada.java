@@ -186,7 +186,6 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             }
 
             sensor.setNuevaTemperatura(temperaturaDTO.getTemperatura(), temperaturaDTO.getFechaMedicion());
-            utilsPublisher.pushMessageQueue("Heladera " + heladera.getNombre() + " - Temperatura " + temperaturaDTO.getTemperatura() + "°C");
 
             entityManager.merge(sensor);
             entityManager.getTransaction().commit();
