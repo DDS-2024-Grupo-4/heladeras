@@ -10,7 +10,7 @@ public class utilsMetrics {
   public static void enviarNuevaAperuraDeHeladera(Integer heladeraId) {
     Dotenv dotenv = Dotenv.load();
     var url = dotenv.get("URL_METRICS");
-    url = url + heladeraId;
+    url = url +"/aperturaHeladera/"+ heladeraId;
     HttpClient client = HttpClient.newHttpClient();
 
     HttpRequest request = HttpRequest.newBuilder()
