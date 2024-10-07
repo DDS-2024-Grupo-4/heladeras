@@ -58,7 +58,10 @@ public class HeladeraController{
 
     public void depositarVianda(@NotNull Context context){
         try{
-            DepositoDTO depositoDTO = context.bodyAsClass(DepositoDTO.class);
+            String heladeraIdParam = context.pathParam("heladeraId");
+            Integer heladeraId = Integer.valueOf(heladeraIdParam);
+            String codigoQR = context.formParam("qrVianda");
+            DepositoDTO depositoDTO = new DepositoDTO(heladeraId, codigoQR);
             if (!fachada.existeHeladera(depositoDTO.getHeladeraId())) {
                 context.status(HttpStatus.NOT_FOUND);
                 context.result("Heladera no encontrada :c");
@@ -77,10 +80,7 @@ public class HeladeraController{
 
     public void retirarVianda(@NotNull Context context){
         try{
-            String heladeraIdParam = context.pathParam("heladeraId");
-            Integer heladeraId = Integer.valueOf(heladeraIdParam);
-            String codigoQR = context.pathParam("qrVianda");
-            RetiroDTO retiroDTO = new RetiroDTO(codigoQR, null, heladeraId);
+            RetiroDTO retiroDTO = context.bodyAsClass(RetiroDTO.class);
             if (!fachada.existeHeladera(retiroDTO.getHeladeraId())) {
                 context.status(HttpStatus.NOT_FOUND);
                 context.result("Heladera no encontrada :c");
