@@ -77,7 +77,10 @@ public class HeladeraController{
 
     public void retirarVianda(@NotNull Context context){
         try{
-            RetiroDTO retiroDTO = context.bodyAsClass(RetiroDTO.class);
+            String heladeraIdParam = context.pathParam("heladeraId");
+            Integer heladeraId = Integer.valueOf(heladeraIdParam);
+            String codigoQR = context.pathParam("qrVianda");
+            RetiroDTO retiroDTO = new RetiroDTO(codigoQR, null, heladeraId);
             if (!fachada.existeHeladera(retiroDTO.getHeladeraId())) {
                 context.status(HttpStatus.NOT_FOUND);
                 context.result("Heladera no encontrada :c");
