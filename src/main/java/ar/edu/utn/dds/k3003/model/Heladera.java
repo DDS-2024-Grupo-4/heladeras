@@ -44,7 +44,7 @@ public class Heladera {
         this.estadoActivo = true;
         this.modelo = generarModeloAleatorio();
         this.direccion = generarDireccionAleatoria();
-        this.temperaturaMaxima = randomNumberBetween(75,120);
+        this.temperaturaMaxima = randomNumberBetween(5,10);
         this.temperaturaMinima = - 10;
     }
 
