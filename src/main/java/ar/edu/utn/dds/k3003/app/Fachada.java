@@ -1,16 +1,19 @@
 package ar.edu.utn.dds.k3003.app;
 
+import ar.edu.utn.dds.k3003.utils.utilsNotifIncidentAndEvents;
 import ar.edu.utn.dds.k3003.facades.FachadaViandas;
 import ar.edu.utn.dds.k3003.facades.dtos.*;
+import ar.edu.utn.dds.k3003.model.DTO.IncidenteDTO;
+import ar.edu.utn.dds.k3003.model.DTO.SuscripcionDTO;
 import ar.edu.utn.dds.k3003.model.Heladera;
 import ar.edu.utn.dds.k3003.model.SensorTemperatura;
-import ar.edu.utn.dds.k3003.utils.utilsMetrics;
-import ar.edu.utn.dds.k3003.utils.utilsPublisher;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.TypedQuery;
 import java.time.LocalDateTime;
 import java.util.*;
+
+import static ar.edu.utn.dds.k3003.app.WebApp.incidenteService;
 
 public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
     private FachadaViandas fachadaViandas;
@@ -23,18 +26,12 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
         this.entityManagerFactory = entityManagerFactory;
     }
 
-    public HeladeraDTO obtenerHeladera(Integer heladeraID) {
+    public Heladera obtenerHeladera(Integer heladeraID) {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         entityManager.getTransaction().begin();
         try {
 
-            Heladera heladera = entityManager.find(Heladera.class, heladeraID);
-            HeladeraDTO heladeraDTO = new HeladeraDTO(
-                heladera.getHeladeraId(),
-                heladera.getNombre(),
-                heladera.cantidadDeViandas()
-            );
-            return heladeraDTO;
+            return entityManager.find(Heladera.class, heladeraID);
         } catch (Exception e) {
             entityManager.getTransaction().rollback();
             throw new RuntimeException("Error al obtener la Heladera con ID: " + heladeraID, e);
@@ -81,7 +78,7 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
         try {
             Heladera heladera = new Heladera(heladeraDTO.getNombre());
             SensorTemperatura sensor = new SensorTemperatura(heladera);
-            heladera.setSensor(sensor);
+            heladera.setSensorTemperatura(sensor);
             entityManager.persist(heladera);
             entityManager.getTransaction().commit();
             entityManager.refresh(heladera);
@@ -113,6 +110,13 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             fachadaViandas.modificarHeladera(vianda.getCodigoQR(), heladeraID);
 
             heladera.guardarVianda(qrVianda);
+            Integer cantidadDeViandasFaltantesPorRetirar = heladera.cantidadDeViandas();
+            Map<Long, Integer> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionNViandasDisponibles(cantidadDeViandasFaltantesPorRetirar);
+            for (Map.Entry<Long, Integer> entry : colaboradoresParaAvisar.entrySet()) {
+                Long colaboradorId = entry.getKey();
+                Integer viandasDisponibles = entry.getValue();
+                utilsNotifIncidentAndEvents.notificarIncidenteAColaborador(colaboradorId, new IncidenteDTO("Faltante Viandas", heladera.getHeladeraId(), viandasDisponibles));
+            }
 
             entityManager.merge(heladera);
    
@@ -144,6 +148,46 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
         }
     }
 
+    public List<SuscripcionDTO> obtenerSuscripciones(Integer heladeraID){
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try {
+            Heladera heladera = entityManager.find(Heladera.class, heladeraID);
+            List<SuscripcionDTO> suscripciones = new ArrayList<>();
+            heladera.getColaboradorIDsuscripcionCantidadFaltantesViandas().forEach((colaboradorId, cantidadN) -> {
+                SuscripcionDTO suscripcionDTO = new SuscripcionDTO();
+                suscripcionDTO.colaboradorId = colaboradorId;
+                suscripcionDTO.heladeraId = heladeraID;
+                suscripcionDTO.tipoSuscripcion = "Faltante Viandas";
+                suscripcionDTO.cantidadN = cantidadN;
+                suscripciones.add(suscripcionDTO);
+            });
+            heladera.getColaboradorIDsuscripcionDesperfectoHeladera().forEach(colaboradorId -> {
+                SuscripcionDTO suscripcionDTO = new SuscripcionDTO();
+                suscripcionDTO.colaboradorId = colaboradorId;
+                suscripcionDTO.heladeraId = heladeraID;
+                suscripcionDTO.tipoSuscripcion = "Heladera Desperfecto";
+                suscripciones.add(suscripcionDTO);
+            });
+            heladera.getColaboradorIDsuscripcionNViandasDisponibles().forEach((colaboradorId, cantidadN) -> {
+                SuscripcionDTO suscripcionDTO = new SuscripcionDTO();
+                suscripcionDTO.colaboradorId = colaboradorId;
+                suscripcionDTO.heladeraId = heladeraID;
+                suscripcionDTO.tipoSuscripcion = "Viandas Disponibles";
+                suscripcionDTO.cantidadN = cantidadN;
+                suscripciones.add(suscripcionDTO);
+            });
+
+            return suscripciones;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al buscar la heladera: " + e.getMessage());
+        } finally {
+            entityManager.getTransaction().commit();
+            entityManager.close();
+        }
+    }
+
     @Override
     public void retirar(RetiroDTO retiroDTO) throws NoSuchElementException {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -164,9 +208,15 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             fachadaViandas.modificarHeladera(vianda.getCodigoQR(), -1);  // -1 SIGNIFICA SET NULL
 
             heladera.retirarVianda(retiroDTO.getQrVianda());
-
+            Integer cantidadDeViandasFaltantesPorRetirar = heladera.cantidadDeViandas();
+            Map<Long, Integer> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionNViandasDisponibles(cantidadDeViandasFaltantesPorRetirar);
+            for (Map.Entry<Long, Integer> entry : colaboradoresParaAvisar.entrySet()) {
+                Long colaboradorId = entry.getKey();
+                Integer viandasDisponibles = entry.getValue();
+                utilsNotifIncidentAndEvents.notificarIncidenteAColaborador(colaboradorId, new IncidenteDTO("Viandas Disponibles", heladera.getHeladeraId(), viandasDisponibles));
+            }
             entityManager.merge(heladera);
-            
+
         } catch (Exception e) {
             if (entityManager.getTransaction().isActive()) {
                 entityManager.getTransaction().rollback();
@@ -185,19 +235,26 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
         entityManager.getTransaction().begin();
         try{
             Heladera heladera = entityManager.find(Heladera.class, temperaturaDTO.getHeladeraId());
-            SensorTemperatura sensor = heladera.getSensor();
+            SensorTemperatura sensor = heladera.getSensorTemperatura();
             if (sensor == null) {
                 throw new NoSuchElementException("Sensor no encontrado para la Heladera con ID: " + temperaturaDTO.getHeladeraId());
             }
 
             sensor.setNuevaTemperatura(temperaturaDTO.getTemperatura(), temperaturaDTO.getFechaMedicion());
 
-            entityManager.merge(sensor);
-
             if (heladera.getTemperaturaMaxima() < temperaturaDTO.getTemperatura()) {
-                utilsMetrics.enviarExcesoTemperaturaHeladera(heladera.getHeladeraId());
+                // Si no tiene tiempo de la última temperatura máxima, lo seteo
+                if (heladera.getTiempoUltimaTemperaturaMaxima() == null) {
+                    heladera.setTiempoUltimaTemperaturaMaxima(temperaturaDTO.getFechaMedicion());
+                } else {
+                    if (!incidenteService.verificarExcesoTemperatura(heladera, temperaturaDTO)) {
+                        // Si no se ha excedido, actualizamos el tiempo
+                        heladera.setTiempoUltimaTemperaturaMaxima(temperaturaDTO.getFechaMedicion());
+                    }
+                }
             }
-
+            entityManager.merge(sensor);
+            entityManager.merge(heladera);
         }catch (Exception e){
             if (entityManager.getTransaction().isActive()) {
                 entityManager.getTransaction().rollback();
@@ -238,6 +295,124 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
         }
     }
 
+    public void suscribirse(SuscripcionDTO suscripcionDTO) {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try {
+            Heladera heladera = entityManager.find(Heladera.class, suscripcionDTO.heladeraId);
+            if (heladera == null) {
+                throw new NoSuchElementException("No se encontró la heladera con ID: " + suscripcionDTO.heladeraId);
+            }
+            switch (suscripcionDTO.tipoSuscripcion) {
+                case "NViandasDisponibles":
+                    heladera.setColaboradorIDsuscripcionNViandasDisponibles(suscripcionDTO.colaboradorId, suscripcionDTO.cantidadN);
+                    break;
+                case "CantidadFaltantesViandas":
+                    heladera.setColaboradorIDsuscripcionCantidadFaltantesViandas(suscripcionDTO.colaboradorId, suscripcionDTO.cantidadN);
+                    break;
+                case "DesperfectoHeladera":
+                    heladera.setColaboradorIDsuscripcionDesperfectoHeladera(suscripcionDTO.colaboradorId);
+                    break;
+                default:
+                    throw new RuntimeException("Tipo de suscripción no válido: " + suscripcionDTO.tipoSuscripcion);
+            }
+        entityManager.merge(heladera);
+        }
+        catch (Exception e) {
+            if (entityManager.getTransaction().isActive()) {
+                entityManager.getTransaction().rollback();
+            }
+            e.printStackTrace();
+            throw new RuntimeException("Error al suscribirse a la heladera: " + e.getMessage());
+        } finally {
+            entityManager.getTransaction().commit();
+            entityManager.close();
+        }
+    }
+
+    public void eliminarSuscripcion(SuscripcionDTO suscripcionDTO){
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try {
+            Heladera heladera = entityManager.find(Heladera.class, suscripcionDTO.heladeraId);
+            if (heladera == null) {
+                throw new NoSuchElementException("No se encontró la heladera con ID: " + suscripcionDTO.heladeraId);
+            }
+            switch (suscripcionDTO.tipoSuscripcion) {
+                case "NViandasDisponibles":
+                    heladera.eliminarColaboradorIDsuscripcionNViandasDisponibles(suscripcionDTO.colaboradorId);
+                    break;
+                case "CantidadFaltantesViandas":
+                    heladera.eliminarColaboradorIDsuscripcionCantidadFaltantesViandas(suscripcionDTO.colaboradorId);
+                    break;
+                case "DesperfectoHeladera":
+                    heladera.eliminarColaboradorIDsuscripcionDesperfectoHeladera(suscripcionDTO.colaboradorId);
+                    break;
+                default:
+                    throw new RuntimeException("Tipo de suscripción no válido: " + suscripcionDTO.tipoSuscripcion);
+            }
+            entityManager.merge(heladera);
+        } catch (Exception e) {
+            if (entityManager.getTransaction().isActive()) {
+                entityManager.getTransaction().rollback();
+            }
+            e.printStackTrace();
+            throw new RuntimeException("Error al eliminar la suscripción a la heladera: " + e.getMessage());
+        } finally {
+            entityManager.getTransaction().commit();
+            entityManager.close();
+        }
+    }
+
+    public void avisoIncidenteDesperfectoHeladera(Integer heladeraID){
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try {
+            Heladera heladera = entityManager.find(Heladera.class, heladeraID);
+            if (heladera == null) {
+                throw new NoSuchElementException("No se encontró la heladera con ID: " + heladeraID);
+            }
+
+            //Manejo del aviso a los suscriptores del evento
+            for(Long colaboradorId : heladera.getColaboradorIDsuscripcionDesperfectoHeladera()){
+                utilsNotifIncidentAndEvents.notificarIncidenteAColaborador(colaboradorId, new IncidenteDTO("Heladera Desperfecto", heladeraID));
+            }
+
+        }
+        catch (Exception e) {
+            if (entityManager.getTransaction().isActive()) {
+                entityManager.getTransaction().rollback();
+            }
+            e.printStackTrace();
+            throw new RuntimeException("Error al avisar del Incidente a los Suscriptores " + e.getMessage());
+        } finally {
+            entityManager.getTransaction().commit();
+            entityManager.close();
+        }
+    }
+
+    public void inhabilitarHeladera(Integer heladeraID){
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try {
+            Heladera heladera = entityManager.find(Heladera.class, heladeraID);
+            if (heladera == null) {
+                throw new NoSuchElementException("No se encontró la heladera con ID: " + heladeraID);
+            }
+            heladera.inhabilitar();
+            entityManager.merge(heladera);
+        } catch (Exception e) {
+            if (entityManager.getTransaction().isActive()) {
+                entityManager.getTransaction().rollback();
+            }
+            e.printStackTrace();
+            throw new RuntimeException("Error al inhabilitar la heladera: " + e.getMessage());
+        } finally {
+            entityManager.getTransaction().commit();
+            entityManager.close();
+        }
+    }
+
     public void eliminarHeladera(Integer heladeraId){
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         entityManager.getTransaction().begin();
@@ -249,8 +424,6 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
                 } else {
                     throw new RuntimeException("No se encontró la heladera con ID: " + heladeraId);
                 }
-
-            entityManager.getTransaction().commit();
         } catch (Exception e) {
             if (entityManager.getTransaction().isActive()) {
                 entityManager.getTransaction().rollback();

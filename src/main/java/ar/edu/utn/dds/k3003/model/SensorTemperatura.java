@@ -1,7 +1,6 @@
 package ar.edu.utn.dds.k3003.model;
 
 import javax.persistence.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -10,7 +9,7 @@ public class SensorTemperatura {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "sensor_id")
     private Integer id;
-    @OneToOne(mappedBy = "sensor")
+    @OneToOne(mappedBy = "sensorTemperatura")
     private Heladera heladera;
     @OneToMany(mappedBy = "sensor", cascade = CascadeType.ALL)
     private List<Temperatura> temperaturas = new ArrayList<>();

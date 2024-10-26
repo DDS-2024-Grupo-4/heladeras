@@ -1,9 +1,12 @@
 package ar.edu.utn.dds.k3003.app;
 
+import ar.edu.utn.dds.k3003.Service.IncidenteService;
 import ar.edu.utn.dds.k3003.controller.HeladeraController;
 import ar.edu.utn.dds.k3003.clients.ViandasProxy;
 import ar.edu.utn.dds.k3003.facades.dtos.Constants;
 import ar.edu.utn.dds.k3003.facades.dtos.TemperaturaDTO;
+import ar.edu.utn.dds.k3003.model.Heladera;
+import ar.edu.utn.dds.k3003.utils.utils;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -15,16 +18,21 @@ import com.rabbitmq.client.DeliverCallback;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
-
+import java.util.concurrent.TimeUnit;
+import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
 
 public class WebApp {
@@ -32,6 +40,8 @@ public class WebApp {
     public static EntityManagerFactory entityManagerFactory;
     public static Channel channel;
     public static Javalin app;
+    public static IncidenteService incidenteService;
+    private static List<Integer> heladerasExcluidasDeSeteoTemperatura;
 
     public static void main(String[] args) throws IOException, TimeoutException {
 
@@ -49,6 +59,7 @@ public class WebApp {
         }).start(port);
 
         var heladeraController = new HeladeraController(fachada);
+        incidenteService = new IncidenteService(entityManagerFactory, fachada);
 
         app.get("/heladeras/crearGenericas", heladeraController::crearHeladerasGenericas);
         app.get("/heladeras/deleteAll", heladeraController::borrarTodo);
@@ -58,9 +69,27 @@ public class WebApp {
         app.post("/retiros", heladeraController::retirarVianda);
         app.post("/temperaturasEnCola/registrar", heladeraController::registrarTemperaturaEnCola);
         app.get("/heladeras/{heladeraId}/temperaturas", heladeraController::obtenerTemperaturas);
+        app.post("/suscripciones", heladeraController::registrarSuscripcion);
+        app.delete("/{heladeraId}/suscripciones", heladeraController::eliminarSuscripcion);
+        app.get("/{heladeraId}/suscripciones", heladeraController::obtenerSuscripciones);
+        //TODO borrar esto es unicamente prueba
+        app.get("/stop/temperaturaHeladera/{heladeraId}", ctx -> {
+            Integer heladeraId = Integer.parseInt(ctx.pathParam("heladeraId"));
+            heladerasExcluidasDeSeteoTemperatura.add(heladeraId); // Añadir a la lista de heladeras excluidas
+            ctx.result("Heladera " + heladeraId + " excluida del registro de temperatura.");
+        });
+        //TODO borrar esto es unicamente prueba
+        app.get("/stop/temperaturaHeladera/{heladeraId}", ctx -> {
+            Integer heladeraId = Integer.parseInt(ctx.pathParam("heladeraId"));
+            heladerasExcluidasDeSeteoTemperatura.remove(heladeraId); // Añadir a la lista de heladeras excluidas
+            ctx.result("Heladera " + heladeraId + " excluida del registro de temperatura.");
+        });
 
         channel = initialCloudAMQPTopicConfiguration();
-        setupConsumer(heladeraController);
+        setupConsumerTemperatura(heladeraController);
+        setupConsumerMovimiento();
+        cronRevisadorUltimaTemperaturaSeteadaEnHeladeras();
+        cronTemperaturaReporteContinuo(heladeraController);
     }
 
     public static ObjectMapper createObjectMapper() {
@@ -99,9 +128,13 @@ public class WebApp {
         return connection.createChannel();
     }
 
-    private static void setupConsumer(HeladeraController heladeraController) throws IOException {
+    public static EntityManagerFactory getEntityManagerFactory() {
+        return entityManagerFactory;
+    }
+
+    private static void setupConsumerTemperatura(HeladeraController heladeraController) throws IOException {
         Dotenv dotenv = Dotenv.load();
-        String QUEUE = dotenv.get("QUEUE_NAME");
+        String QUEUE = dotenv.get("QUEUE_NAME_TEMPERATURA");
         channel.queueDeclare(QUEUE, false, false, false, null);
         System.out.println("Esperando mensajes en la cola " + QUEUE);
 
@@ -130,4 +163,69 @@ public class WebApp {
         channel.basicConsume(QUEUE, true, deliverCallback, consumerTag -> { });
     }
 
+    private static void setupConsumerMovimiento() throws IOException {
+        Dotenv dotenv = Dotenv.load();
+        String QUEUE = dotenv.get("QUEUE_NAME_MOVIMIENTO");
+        channel.queueDeclare(QUEUE, false, false, false, null);
+        System.out.println("Esperando mensajes en la cola " + QUEUE);
+
+        // PROCESAMIENTO DE LOS MENSAJES
+        DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+            String message = new String(delivery.getBody(), "UTF-8");
+
+            // Se espera un formato: "Movimiento Heladera ID"
+            String[] parts = message.split(" - ");
+            if (parts.length == 1) {
+                String movimientoPart = parts[0]; // "Movimiento Heladera ID"
+
+                // Extraigo el ID del movimiento
+                int movimientoId = Integer.parseInt(movimientoPart.split(" ")[2]); // Asumiendo "Movimiento X"
+
+                System.out.println("Processed Movimiento en Heladera " + movimientoId);
+                incidenteService.movimientoHeladera(movimientoId);
+            } else {
+                System.err.println("Formato de mensaje incorrecto: " + message);
+            }
+        };
+
+        channel.basicConsume(QUEUE, true, deliverCallback, consumerTag -> {});
+    }
+
+    private static void cronRevisadorUltimaTemperaturaSeteadaEnHeladeras() {
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+        // Tarea a ejecutar
+        Runnable tarea = () -> {
+            incidenteService.controlarTiempoDeEsperaMaximoTemperaturas();
+        };
+        scheduler.scheduleAtFixedRate(tarea, 0, 60, TimeUnit.SECONDS);
+    }
+
+    //TODO BORRAR ESTA PARTE ES SOLO DE PRUEBA EN TIEMPO DE EJECUCION
+    private static void cronTemperaturaReporteContinuo(HeladeraController heladeraController){
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+        // Tarea a ejecutar
+        Runnable tarea = () -> {
+            EntityManager entityManager = entityManagerFactory.createEntityManager();
+            try {
+                String jpql = "SELECT h FROM Heladera h";
+                TypedQuery<Heladera> query = entityManager.createQuery(jpql, Heladera.class);
+                List<Heladera> heladeras = query.getResultList();
+                for (Heladera heladera : heladeras) {
+                    if(!heladerasExcluidasDeSeteoTemperatura.contains(heladera.getHeladeraId())) {
+                        TemperaturaDTO temperaturaDTO = new TemperaturaDTO(utils.randomNumberBetween(1,4), heladera.getHeladeraId(), LocalDateTime.now());
+                        System.out.println("TemperaturaDTO " + temperaturaDTO);
+                        heladeraController.registrarTemperatura(temperaturaDTO);                     continue;
+                    }
+                }
+
+            } finally {
+                entityManager.getTransaction().commit();
+                entityManager.close();
+            }
+            incidenteService.controlarTiempoDeEsperaMaximoTemperaturas();
+        };
+        scheduler.scheduleAtFixedRate(tarea, 0, 50, TimeUnit.SECONDS);
+    }
 }

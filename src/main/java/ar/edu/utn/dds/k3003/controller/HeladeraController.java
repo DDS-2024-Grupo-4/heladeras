@@ -1,6 +1,8 @@
 package ar.edu.utn.dds.k3003.controller;
 
 import ar.edu.utn.dds.k3003.app.Fachada;
+import ar.edu.utn.dds.k3003.model.DTO.SuscripcionDTO;
+import ar.edu.utn.dds.k3003.model.Heladera;
 import ar.edu.utn.dds.k3003.utils.utilsMetrics;
 import ar.edu.utn.dds.k3003.facades.dtos.HeladeraDTO;
 import ar.edu.utn.dds.k3003.facades.dtos.RetiroDTO;
@@ -16,7 +18,9 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
+//TODO FALTA LA PARTE DE DESHABILITAR HELADERA Y QUE SI ESTA DESHABILITADA PASEMOS DE LARGO Y TIREMOS ERROR!
 public class HeladeraController{
     private final Fachada fachada;
 
@@ -42,7 +46,12 @@ public class HeladeraController{
         try {
             String heladeraIdParam = context.pathParam("heladeraId");
             Integer heladeraId = Integer.valueOf(heladeraIdParam);
-            var heladeraDTO = fachada.obtenerHeladera(heladeraId);
+            Heladera heladera = fachada.obtenerHeladera(heladeraId);
+            HeladeraDTO heladeraDTO = new HeladeraDTO(
+                heladera.getHeladeraId(),
+                heladera.getNombre(),
+                heladera.cantidadDeViandas()
+            );
             utilsMetrics.enviarConsultaNuevaDeHeladera();
             context.json(heladeraDTO);
             context.status(HttpStatus.OK);
@@ -153,6 +162,68 @@ public class HeladeraController{
             context.result("Heladera no encontrada");
         }
     }
+
+    public void registrarSuscripcion(Context context){
+        SuscripcionDTO suscripcionDTO = context.bodyAsClass(SuscripcionDTO.class);
+        Set<String> tiposValidosSuscripciones = Set.of("Viandas Disponibles", "Faltante Viandas", "Heladera Desperfecto");
+        if (suscripcionDTO.tipoSuscripcion == null || suscripcionDTO.heladeraId == null || suscripcionDTO.colaboradorId == null) {
+            context.status(HttpStatus.BAD_REQUEST);
+            context.result("Heladera ID, Colaborador ID y Tipo de Suscripcion son obligatorios.");
+        }
+        else if (!fachada.existeHeladera(suscripcionDTO.heladeraId)) {
+            context.status(HttpStatus.NOT_FOUND);
+            context.result("Heladera no encontrada :c");
+        }
+        else if (!tiposValidosSuscripciones.contains(suscripcionDTO.tipoSuscripcion)){
+            context.status(HttpStatus.BAD_REQUEST);
+            context.result("Tipo de Suscripcion invalido.");
+        }
+        else{
+            fachada.suscribirse(suscripcionDTO);
+            context.status(HttpStatus.OK);
+            context.result("Suscripcion realizada correctamente.");
+        }
+    }
+
+    public void obtenerSuscripciones(@NotNull Context context){
+        try{
+            Integer heladeraId = Integer.valueOf(context.pathParam("heladeraId"));
+            if (!fachada.existeHeladera(heladeraId)) {
+                throw new NoSuchElementException();
+            }
+            List<SuscripcionDTO> suscripciones = fachada.obtenerSuscripciones(heladeraId);
+            context.json(suscripciones);
+            context.status(HttpStatus.OK);
+        }
+        catch(NoSuchElementException e){
+            context.result(e.getLocalizedMessage());
+            context.status(HttpStatus.BAD_REQUEST);
+            context.result("Heladera no encontrada");
+        }
+    }
+
+    public void eliminarSuscripcion(Context context){
+        SuscripcionDTO suscripcionDTO = context.bodyAsClass(SuscripcionDTO.class);
+        Set<String> tiposValidosSuscripciones = Set.of("Viandas Disponibles", "Faltante Viandas", "Heladera Desperfecto");
+        if (suscripcionDTO.tipoSuscripcion == null || suscripcionDTO.heladeraId == null || suscripcionDTO.colaboradorId == null) {
+            context.status(HttpStatus.BAD_REQUEST);
+            context.result("Heladera ID, Colaborador ID y Tipo de Suscripcion son obligatorios.");
+        }
+        else if (!fachada.existeHeladera(suscripcionDTO.heladeraId)) {
+            context.status(HttpStatus.NOT_FOUND);
+            context.result("Heladera no encontrada :c");
+        }
+        else if (!tiposValidosSuscripciones.contains(suscripcionDTO.tipoSuscripcion)){
+            context.status(HttpStatus.BAD_REQUEST);
+            context.result("Tipo de Suscripcion invalido.");
+        }
+        else{
+            fachada.eliminarSuscripcion(suscripcionDTO);
+            context.status(HttpStatus.OK);
+            context.result("Suscripcion Eliminada correctamente.");
+        }
+    }
+
     public void crearHeladerasGenericas(Context context){
         System.out.println(this.fachada);
         try {
