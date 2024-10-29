@@ -1,5 +1,6 @@
 package ar.edu.utn.dds.k3003.controller;
 
+import ar.edu.utn.dds.k3003.Service.IncidenteService;
 import ar.edu.utn.dds.k3003.app.Fachada;
 import ar.edu.utn.dds.k3003.model.DTO.SuscripcionDTO;
 import ar.edu.utn.dds.k3003.model.Heladera;
@@ -23,15 +24,18 @@ import java.util.Set;
 //TODO FALTA LA PARTE DE DESHABILITAR HELADERA Y QUE SI ESTA DESHABILITADA PASEMOS DE LARGO Y TIREMOS ERROR!
 public class HeladeraController{
     private final Fachada fachada;
+    private final IncidenteService incidenteService;
 
-    public HeladeraController(Fachada fachada){
+    public HeladeraController(Fachada fachada, IncidenteService incidenteService){
         this.fachada = fachada;
+        this.incidenteService = incidenteService;
     }
 
     public void agregar(@NotNull Context context){
         try{
-            HeladeraDTO heladeraDTO = fachada.agregar(context.bodyAsClass(HeladeraDTO.class));
-            context.json(heladeraDTO);
+            HeladeraDTO heladeraDTO = context.bodyAsClass(HeladeraDTO.class);
+            HeladeraDTO heladeraDTOdevuelta = fachada.agregar(heladeraDTO);
+            context.json(heladeraDTOdevuelta);
             context.status(HttpStatus.OK);
         }
         catch(NoSuchElementException e){
@@ -65,10 +69,19 @@ public class HeladeraController{
         }
     }
 
+    public List<Heladera> obtenerTodasLasHeladeras(){
+        return fachada.obtenerTodasLasHeladeras();
+    }
+
     public void depositarVianda(@NotNull Context context){
         try{
             String heladeraIdParam = context.pathParam("heladeraId");
             Integer heladeraId = Integer.valueOf(heladeraIdParam);
+            if(!fachada.heladeraHabilitada(heladeraId)){
+                context.status(HttpStatus.FORBIDDEN);
+                context.result("La heladera no está habilitada.");
+                return;
+            }
             String codigoQR = context.formParam("qrVianda");
             DepositoDTO depositoDTO = new DepositoDTO(heladeraId, codigoQR);
             if (!fachada.existeHeladera(depositoDTO.getHeladeraId())) {
@@ -94,6 +107,11 @@ public class HeladeraController{
                 context.status(HttpStatus.NOT_FOUND);
                 context.result("Heladera no encontrada :c");
             }
+            if(!fachada.heladeraHabilitada(retiroDTO.getHeladeraId())){
+                context.status(HttpStatus.FORBIDDEN);
+                context.result("La heladera no está habilitada.");
+                return;
+            }
             utilsMetrics.enviarNuevaAperuraDeHeladera(retiroDTO.getHeladeraId());
             fachada.retirar(retiroDTO);
             context.status(HttpStatus.OK);
@@ -115,7 +133,11 @@ public class HeladeraController{
                 context.result("Heladera ID y Temperatura son obligatorios.");
                 return;
             }
-
+            if(!fachada.heladeraHabilitada(temperaturaDTO.getHeladeraId())){
+                context.status(HttpStatus.FORBIDDEN);
+                context.result("La heladera no está habilitada.");
+                return;
+            }
             // Formato del mensaje
             String mensaje = String.format("Heladera %d - Temperatura %d°C",
                 temperaturaDTO.getHeladeraId(),
@@ -137,12 +159,15 @@ public class HeladeraController{
         }
     }
 
-    public void registrarTemperatura(TemperaturaDTO temperaturaDTO) {
+    public void registrarTemperatura(TemperaturaDTO temperaturaDTO) throws RuntimeException {
         try{
+            if(!fachada.heladeraHabilitada(temperaturaDTO.getHeladeraId())){
+                throw new RuntimeException("La heladera " + temperaturaDTO.getHeladeraId() + " no está habilitada, imposible setearle temperatura");
+            }
             fachada.temperatura(temperaturaDTO);
         }
-        catch(NoSuchElementException e){
-            System.out.println(e.getLocalizedMessage());
+        catch(Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -152,8 +177,50 @@ public class HeladeraController{
             if (!fachada.existeHeladera(heladeraId)) {
                 throw new NoSuchElementException();
             }
+            if(!fachada.heladeraHabilitada(heladeraId)){
+                context.status(HttpStatus.FORBIDDEN);
+                context.result("La heladera no está habilitada.");
+                return;
+            }
             List<TemperaturaDTO> temperaturas = fachada.obtenerTemperaturas(heladeraId);
             context.json(temperaturas);
+            context.status(HttpStatus.OK);
+        }
+        catch(NoSuchElementException e){
+            context.result(e.getLocalizedMessage());
+            context.status(HttpStatus.BAD_REQUEST);
+            context.result("Heladera no encontrada");
+        }
+        catch (RuntimeException e){
+            context.result(e.getLocalizedMessage());
+            context.status(HttpStatus.NOT_FOUND);
+            context.result("Heladera sin temperaturas Seteadas");
+        }
+    }
+
+    public void reportarFalla(Context context){
+        try{
+            Integer heladeraId = Integer.valueOf(context.pathParam("heladeraId"));
+            if (!fachada.existeHeladera(heladeraId)) {
+                throw new NoSuchElementException();
+            }
+            incidenteService.fallaEnHeladera(heladeraId);
+            context.status(HttpStatus.OK);
+        }
+        catch(NoSuchElementException e){
+            context.result(e.getLocalizedMessage());
+            context.status(HttpStatus.BAD_REQUEST);
+            context.result("Heladera no encontrada");
+        }
+    }
+
+    public void arreglarFalla(Context context){
+        try{
+            Integer heladeraId = Integer.valueOf(context.pathParam("heladeraId"));
+            if (!fachada.existeHeladera(heladeraId)) {
+                throw new NoSuchElementException();
+            }
+            incidenteService.reparacionHeladera(heladeraId);
             context.status(HttpStatus.OK);
         }
         catch(NoSuchElementException e){
@@ -204,7 +271,7 @@ public class HeladeraController{
 
     public void eliminarSuscripcion(Context context){
         SuscripcionDTO suscripcionDTO = context.bodyAsClass(SuscripcionDTO.class);
-        Set<String> tiposValidosSuscripciones = Set.of("Viandas Disponibles", "Faltante Viandas", "Heladera Desperfecto");
+        Set<String> tiposValidosSuscripciones = Set.of("ViandasDisponibles", "FaltanteViandas", "HeladeraDesperfecto");
         if (suscripcionDTO.tipoSuscripcion == null || suscripcionDTO.heladeraId == null || suscripcionDTO.colaboradorId == null) {
             context.status(HttpStatus.BAD_REQUEST);
             context.result("Heladera ID, Colaborador ID y Tipo de Suscripcion son obligatorios.");

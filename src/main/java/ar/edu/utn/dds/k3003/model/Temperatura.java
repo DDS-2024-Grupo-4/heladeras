@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 public class Temperatura {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @ManyToOne
+    @OneToOne
     private SensorTemperatura sensor;
     private LocalDateTime tiempo;
     private Integer temperatura;

@@ -19,7 +19,7 @@
             <property name="hibernate.connection.pool_size" value="5" />
             <property name="hibernate.connection.release_mode" value="after_statement"/>
             <property name="hibernate.archive.autodetection" value="class" />
-            <property name="hibernate.show_sql" value="true" />
+            <property name="hibernate.show_sql" value="false" />
             <property name="hibernate.format_sql" value="true" />
             <property name="use_sql_comments" value="true" />
             <property name="hibernate.connection.url" value="jdbc:postgresql://pg-3b2-frba-95ae.i.aivencloud.com:17556/defaultdb"/>

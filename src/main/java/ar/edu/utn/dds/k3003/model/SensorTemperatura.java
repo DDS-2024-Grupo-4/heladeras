@@ -11,8 +11,8 @@ public class SensorTemperatura {
     private Integer id;
     @OneToOne(mappedBy = "sensorTemperatura")
     private Heladera heladera;
-    @OneToMany(mappedBy = "sensor", cascade = CascadeType.ALL)
-    private List<Temperatura> temperaturas = new ArrayList<>();
+    @OneToOne(mappedBy = "sensor", cascade = CascadeType.ALL)
+    private Temperatura temperatura;
     private Integer ultimaTemperaRegistrada;
 
     public SensorTemperatura(){}
@@ -27,20 +27,15 @@ public class SensorTemperatura {
 
     public Map<Integer, LocalDateTime> obtenerTodasLasTemperaturas(){
         Map<Integer, LocalDateTime> temperaturasMap = new HashMap<>();
-        for (Temperatura temperatura: temperaturas)
-        {
-            temperaturasMap.put(temperatura.gettemperatura(), temperatura.gettiempo());
+        if(this.temperatura != null){
+            this.temperatura.gettiempo();
+            temperaturasMap.put(this.temperatura.gettemperatura(), this.temperatura.gettiempo());
         }
         return temperaturasMap;
     }
 
-    public Map.Entry<Integer, LocalDateTime> obtenerTemperatura(){
-        return setNuevaTemperatura( (int) (Math.random() * 10) , LocalDateTime.now() );
-    }
-
     public Map.Entry<Integer, LocalDateTime> setNuevaTemperatura(Integer temperatura, LocalDateTime tiempo) {
-        Temperatura temperaturaNueva = new Temperatura(this,temperatura,tiempo);
-        this.temperaturas.add(temperaturaNueva);
+        this.temperatura =  new Temperatura(this, temperatura, tiempo);
         this.ultimaTemperaRegistrada = temperatura;
         return new AbstractMap.SimpleEntry<>(temperatura, tiempo);
     }

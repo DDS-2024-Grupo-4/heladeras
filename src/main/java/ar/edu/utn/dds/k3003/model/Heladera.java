@@ -1,6 +1,7 @@
 package ar.edu.utn.dds.k3003.model;
 
 import javax.persistence.*;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,18 +21,20 @@ public class Heladera {
     private Coordenadas coordenadas;
     private String direccion;
     private Integer cantidadMaximaViandas;
-    private Float pesoMaximo;
-    private Float pesoActual;
     private Boolean estadoActivo;
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "sensor_id", referencedColumnName = "sensor_id")
     private SensorTemperatura sensorTemperatura;
     private Integer temperaturaMaxima;
-    private Integer tiempoMaximoTemperaturaMaxima;
-    private Integer tiempoMaximoUltimoReciboTemperatura;
+    private Integer temperaturaMinima;
+    private Integer umbralTemperatura;
     private LocalDateTime tiempoUltimaTemperaturaMaxima;
-    private Boolean heladeraAbierta;
-    @ElementCollection
+    private LocalDateTime tiempoUltimaTemperaturaMinima;
+
+    //Campos para FALLO DE DESCONEXION
+    private Integer tiempoMaximoUltimoReciboTemperatura;
+    private LocalDateTime tiempoUltimaTemperaturaRecibida;
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> viandas = new ArrayList<>();
     @ElementCollection
     @CollectionTable(name = "colaboradorIDsuscripcionNViandasDisponibles")
@@ -52,14 +55,13 @@ public class Heladera {
         this.nombre = nombre;
         this.coordenadas = new Coordenadas(randomNumberBetween(0,255), randomNumberBetween(0,255));
         this.cantidadMaximaViandas = randomNumberBetween(10,25);
-        this.pesoMaximo = 100f;
-        this.pesoActual = 0f;
         this.estadoActivo = true;
         this.modelo = generarModeloAleatorio();
         this.direccion = generarDireccionAleatoria();
-        this.temperaturaMaxima = randomNumberBetween(5,10);
-        this.tiempoMaximoTemperaturaMaxima = randomNumberBetween(1,5);
-        this.tiempoMaximoUltimoReciboTemperatura = randomNumberBetween(1,5);
+        this.temperaturaMaxima = randomNumberBetween(10,15);
+        this.temperaturaMinima = randomNumberBetween(0,3);
+        this.umbralTemperatura = randomNumberBetween(1,2);
+        this.tiempoMaximoUltimoReciboTemperatura = randomNumberBetween(1,2);
     }
 
     public void setHeladeraId(Integer id){ this.heladeraId = id;};
@@ -74,17 +76,10 @@ public class Heladera {
         return this.sensorTemperatura.getUltimaTemperaRegistrada();
     }
 
-    public void setHeladeraAbierta(Boolean heladeraAbierta) {
-        this.heladeraAbierta = heladeraAbierta;
-    }
-
-    public Map<Integer, LocalDateTime> obtenerTodasLasTemperaturas(){
+    public Map<Integer, LocalDateTime> obtenerTemperaturaHeladera(){
         return this.sensorTemperatura.obtenerTodasLasTemperaturas();
     }
 
-    public Map.Entry<Integer, LocalDateTime> reportarTemperatura(){
-        return this.sensorTemperatura.obtenerTemperatura();
-    }
     public void guardarVianda(String viandaQR) throws Exception {
         if (this.cantidadDeViandas() < cantidadMaximaViandas) {
             this.viandas.add(viandaQR);
@@ -107,38 +102,80 @@ public class Heladera {
     public void setSensorTemperatura(SensorTemperatura sensorTemperatura) {
         this.sensorTemperatura = sensorTemperatura;
     }
-    public Boolean getHeladeraAbierta() {
-        return heladeraAbierta;
+
+    public LocalDateTime getTiempoUltimaTemperaturaRecibida(){
+        return this.tiempoUltimaTemperaturaRecibida;
     }
 
-    public void setTiempoUltimaTemperaturaMaxima(LocalDateTime tiempoUltimaTemperaturaMaxima) {
-        this.tiempoUltimaTemperaturaMaxima = tiempoUltimaTemperaturaMaxima;
-    }
-    public LocalDateTime getTiempoUltimaTemperaturaMaxima() {
-        return tiempoUltimaTemperaturaMaxima;
+    public void setTiempoUltimaTemperaturaRecibida(LocalDateTime tiempoUltimaTemperaturaRecibida) {
+        this.tiempoUltimaTemperaturaRecibida = tiempoUltimaTemperaturaRecibida;
     }
 
-    public Integer tiempoMaximoTemperaturaMaxima(){
-        return this.tiempoMaximoTemperaturaMaxima;
+    public Boolean superoTiempoUltimaTemperaturaRecibida(){
+        return this.tiempoUltimaTemperaturaRecibida.plusMinutes(tiempoMaximoUltimoReciboTemperatura).isBefore(LocalDateTime.now());
+    }
+    //////////////////////////////////////////
+    public boolean superoTiempoMaximoTemperaturaMaxima() {
+        if (tiempoUltimaTemperaturaMaxima == null) {
+            return false;
+        }
+        long tiempoTranscurrido = Duration.between(tiempoUltimaTemperaturaMaxima, LocalDateTime.now()).toMinutes();
+        return tiempoTranscurrido > umbralTemperatura;
+    }
+    public boolean superoTiempoMaximoTemperaturaMinima() {
+        if (tiempoUltimaTemperaturaMinima == null) {
+            return false;
+        }
+        long tiempoTranscurrido = Duration.between(tiempoUltimaTemperaturaMinima, LocalDateTime.now()).toMinutes();
+        return tiempoTranscurrido > umbralTemperatura;
     }
 
-    public Integer tiempoMaximoUltimoReciboTemperatura(){
-        return this.tiempoMaximoUltimoReciboTemperatura;
-    }
-
-    public Boolean superoTiempoMaximoTemperaturaMaxima(){
-        return this.tiempoUltimaTemperaturaMaxima.plusHours(tiempoMaximoTemperaturaMaxima).isBefore(LocalDateTime.now());
-    }
-
-    public void setTiempoMaximoTemperaturaMaxima(Integer tiempoMaximoTemperaturaMaxima) {
-        this.tiempoMaximoTemperaturaMaxima = tiempoMaximoTemperaturaMaxima;
-    }
 
     public Integer getTemperaturaMaxima() {
         return temperaturaMaxima;
     }
 
+    public Integer getTemperaturaMinima() {
+        return this.temperaturaMinima;
+    }
 
+    public void setTiempoUltimaTemperaturaMaxima(LocalDateTime tiempo) {
+        this.tiempoUltimaTemperaturaMaxima = tiempo;
+    }
+
+    public void setTiempoUltimaTemperaturaMinima(LocalDateTime tiempo) {
+        this.tiempoUltimaTemperaturaMinima = tiempo;
+    }
+
+    public Long tiempoRestanteHastaError() {
+        LocalDateTime ahora = LocalDateTime.now();
+        long tiempoRestante = Long.MAX_VALUE; // Por defecto, sin límite
+
+        // Calculo de tiempo restante para temperatura máxima
+        if (tiempoUltimaTemperaturaMaxima != null) {
+            long minutosDesdeUltimaMaxima = calcularMinutos(tiempoUltimaTemperaturaMaxima, ahora);
+            long tiempoMaximoRestante = umbralTemperatura - minutosDesdeUltimaMaxima;
+            if (tiempoMaximoRestante <= 0) {
+                return 0L;
+            }
+            tiempoRestante = Math.min(tiempoRestante, tiempoMaximoRestante);
+        }
+
+        // Calculo de tiempo restante para temperatura mínima
+        if (tiempoUltimaTemperaturaMinima != null) {
+            long minutosDesdeUltimaMinima = calcularMinutos(tiempoUltimaTemperaturaMinima, ahora);
+            long tiempoMinimoRestante = umbralTemperatura - minutosDesdeUltimaMinima;
+            if (tiempoMinimoRestante <= 0) {
+                return 0L; // Ya ha excedido el tiempo
+            }
+            tiempoRestante = Math.min(tiempoRestante, tiempoMinimoRestante);
+        }
+
+        return tiempoRestante;
+    }
+    private long calcularMinutos(LocalDateTime desde, LocalDateTime hasta) {
+        return java.time.Duration.between(desde, hasta).toMinutes();
+    }
 
     public Map<Long, Integer> getColaboradorIDsuscripcionNViandasDisponibles(Integer nViandasDisponibles) {
         Map<Long, Integer> colaboradoresAAvisar = this.colaboradorIDsuscripcionNViandasDisponibles.entrySet().stream()
@@ -195,8 +232,23 @@ public class Heladera {
     }
     public void habilitar(){
         this.estadoActivo = true;
+        tiempoUltimaTemperaturaMaxima = null;
+        tiempoUltimaTemperaturaMinima = null;
     }
     public Boolean estaActiva(){
         return this.estadoActivo;
+    }
+
+    @Override
+    public String toString() {
+        return "Heladera{" +
+            "heladeraId=" + heladeraId +
+            ", estadoActivo=" + estadoActivo +
+            ", temperaturaMaxima=" + temperaturaMaxima +
+            ", temperaturaMinima=" + temperaturaMinima +
+            ", umbralTemperatura=" + umbralTemperatura +
+            ", tiempoUltimaTemperaturaMaxima=" + tiempoUltimaTemperaturaMaxima +
+            ", tiempoUltimaTemperaturaMinima=" + tiempoUltimaTemperaturaMinima +
+            '}';
     }
 }

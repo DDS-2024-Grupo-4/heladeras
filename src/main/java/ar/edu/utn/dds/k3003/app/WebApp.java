@@ -18,11 +18,10 @@ import com.rabbitmq.client.DeliverCallback;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
-import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
-import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -41,7 +40,10 @@ public class WebApp {
     public static Channel channel;
     public static Javalin app;
     public static IncidenteService incidenteService;
-    private static List<Integer> heladerasExcluidasDeSeteoTemperatura;
+    private static List<Integer> heladerasExcluidasDeSeteoTemperatura = new ArrayList<>();
+    private static Integer tiempoSeteoNuevasTemperaturas;
+    private static Integer tiempoRevisarUltimaTemperaturaSeteada;
+
 
     public static void main(String[] args) throws IOException, TimeoutException {
 
@@ -51,6 +53,8 @@ public class WebApp {
         var fachada = new Fachada(entityManagerFactory);
         fachada.setViandasProxy(new ViandasProxy(objectMapper));
         var port = Integer.parseInt(dotenv.get("PORT"));
+        tiempoSeteoNuevasTemperaturas =  Integer.parseInt(dotenv.get("TIMECRON_NEW_TEMPERATURES"));
+        tiempoRevisarUltimaTemperaturaSeteada =  Integer.parseInt(dotenv.get("TIMECRON_REVIEW_LAST_TEMPERATURE"));
 
         app = Javalin.create(config -> {
             config.jsonMapper(new JavalinJackson().updateMapper(mapper -> {
@@ -58,8 +62,8 @@ public class WebApp {
             }));
         }).start(port);
 
-        var heladeraController = new HeladeraController(fachada);
         incidenteService = new IncidenteService(entityManagerFactory, fachada);
+        var heladeraController = new HeladeraController(fachada,incidenteService);
 
         app.get("/heladeras/crearGenericas", heladeraController::crearHeladerasGenericas);
         app.get("/heladeras/deleteAll", heladeraController::borrarTodo);
@@ -70,6 +74,8 @@ public class WebApp {
         app.post("/temperaturasEnCola/registrar", heladeraController::registrarTemperaturaEnCola);
         app.get("/heladeras/{heladeraId}/temperaturas", heladeraController::obtenerTemperaturas);
         app.post("/suscripciones", heladeraController::registrarSuscripcion);
+        app.get("/heladera/{heladeraId}/reportarFalla", heladeraController::reportarFalla);
+        app.get("/heladera/{heladeraId}/arreglarFalla", heladeraController::arreglarFalla);
         app.delete("/{heladeraId}/suscripciones", heladeraController::eliminarSuscripcion);
         app.get("/{heladeraId}/suscripciones", heladeraController::obtenerSuscripciones);
         //TODO borrar esto es unicamente prueba
@@ -79,7 +85,7 @@ public class WebApp {
             ctx.result("Heladera " + heladeraId + " excluida del registro de temperatura.");
         });
         //TODO borrar esto es unicamente prueba
-        app.get("/stop/temperaturaHeladera/{heladeraId}", ctx -> {
+        app.get("/continue/temperaturaHeladera/{heladeraId}", ctx -> {
             Integer heladeraId = Integer.parseInt(ctx.pathParam("heladeraId"));
             heladerasExcluidasDeSeteoTemperatura.remove(heladeraId); // Añadir a la lista de heladeras excluidas
             ctx.result("Heladera " + heladeraId + " excluida del registro de temperatura.");
@@ -126,10 +132,6 @@ public class WebApp {
         factory.setVirtualHost(dotenv.get("VHOST"));
         Connection connection = factory.newConnection();
         return connection.createChannel();
-    }
-
-    public static EntityManagerFactory getEntityManagerFactory() {
-        return entityManagerFactory;
     }
 
     private static void setupConsumerTemperatura(HeladeraController heladeraController) throws IOException {
@@ -179,10 +181,11 @@ public class WebApp {
                 String movimientoPart = parts[0]; // "Movimiento Heladera ID"
 
                 // Extraigo el ID del movimiento
-                int movimientoId = Integer.parseInt(movimientoPart.split(" ")[2]); // Asumiendo "Movimiento X"
+                int heladeraID = Integer.parseInt(movimientoPart.split(" ")[2]); // Asumiendo "Movimiento X"
 
-                System.out.println("Processed Movimiento en Heladera " + movimientoId);
-                incidenteService.movimientoHeladera(movimientoId);
+                System.out.println("Movimiento en Heladera " + heladeraID);
+                heladerasExcluidasDeSeteoTemperatura.add(heladeraID);
+                incidenteService.movimientoHeladera(heladeraID);
             } else {
                 System.err.println("Formato de mensaje incorrecto: " + message);
             }
@@ -198,34 +201,31 @@ public class WebApp {
         Runnable tarea = () -> {
             incidenteService.controlarTiempoDeEsperaMaximoTemperaturas();
         };
-        scheduler.scheduleAtFixedRate(tarea, 0, 60, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(tarea, 0, tiempoRevisarUltimaTemperaturaSeteada, TimeUnit.SECONDS);
     }
 
     //TODO BORRAR ESTA PARTE ES SOLO DE PRUEBA EN TIEMPO DE EJECUCION
     private static void cronTemperaturaReporteContinuo(HeladeraController heladeraController){
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
         // Tarea a ejecutar
         Runnable tarea = () -> {
-            EntityManager entityManager = entityManagerFactory.createEntityManager();
             try {
-                String jpql = "SELECT h FROM Heladera h";
-                TypedQuery<Heladera> query = entityManager.createQuery(jpql, Heladera.class);
-                List<Heladera> heladeras = query.getResultList();
+                List<Heladera> heladeras = heladeraController.obtenerTodasLasHeladeras();
                 for (Heladera heladera : heladeras) {
                     if(!heladerasExcluidasDeSeteoTemperatura.contains(heladera.getHeladeraId())) {
-                        TemperaturaDTO temperaturaDTO = new TemperaturaDTO(utils.randomNumberBetween(1,4), heladera.getHeladeraId(), LocalDateTime.now());
-                        System.out.println("TemperaturaDTO " + temperaturaDTO);
-                        heladeraController.registrarTemperatura(temperaturaDTO);                     continue;
+                        TemperaturaDTO temperaturaDTO = new TemperaturaDTO(utils.randomNumberBetween(1,15), heladera.getHeladeraId(), LocalDateTime.now());
+                        heladeraController.registrarTemperatura(temperaturaDTO);
+                    }
+                    else {
+                        System.out.println("Heladera " + heladera.getHeladeraId() + " excluida del registro de temperatura.");
                     }
                 }
 
-            } finally {
-                entityManager.getTransaction().commit();
-                entityManager.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException("Error con las temperaturas: " + e.getMessage());
             }
-            incidenteService.controlarTiempoDeEsperaMaximoTemperaturas();
         };
-        scheduler.scheduleAtFixedRate(tarea, 0, 50, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(tarea, 0, tiempoSeteoNuevasTemperaturas, TimeUnit.SECONDS);
     }
 }
