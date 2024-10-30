@@ -35,7 +35,12 @@ public class SensorTemperatura {
     }
 
     public Map.Entry<Integer, LocalDateTime> setNuevaTemperatura(Integer temperatura, LocalDateTime tiempo) {
-        this.temperatura =  new Temperatura(this, temperatura, tiempo);
+        if (this.temperatura == null) {
+            this.temperatura = new Temperatura(this, temperatura, tiempo);
+        } else {
+            this.temperatura.setTemperatura(temperatura);
+            this.temperatura.setTiempo(tiempo);
+        }
         this.ultimaTemperaRegistrada = temperatura;
         return new AbstractMap.SimpleEntry<>(temperatura, tiempo);
     }

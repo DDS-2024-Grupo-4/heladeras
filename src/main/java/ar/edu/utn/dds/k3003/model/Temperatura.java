@@ -20,6 +20,12 @@ public class Temperatura {
         this.temperatura = temperatura;
     }
 
+    public void setTemperatura(Integer temperatura) {
+        this.temperatura = temperatura;
+    }
+    public void setTiempo(LocalDateTime tiempo) {
+        this.tiempo = tiempo;
+    }
     public Integer getId() {
         return id;
     }

@@ -104,11 +104,11 @@ public class IncidenteService {
     return false;
   }
 
-
   public void controlarTiempoDeEsperaMaximoTemperaturas() {
     try {
       List<Heladera> heladeras = fachadaHeladera.obtenerTodasLasHeladeras();
       for (Heladera heladera : heladeras) {
+        if (heladera.estaActiva() != false) {
         System.out.println("\n Revisando heladera ID: " + heladera.getHeladeraId());
         System.out.println("Último tiempo " + heladera.getTiempoUltimaTemperaturaRecibida());
 
@@ -126,7 +126,7 @@ public class IncidenteService {
         } else {
           System.out.println("La heladera ID: " + heladera.getHeladeraId() + " está dentro del tiempo permitido.\n");
         }
-      }
+      }}
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException("Error al controlar el tiempo de espera máximo de temperaturas: " + e.getMessage());
@@ -140,9 +140,12 @@ public class IncidenteService {
       if (heladera == null) {
         throw new RuntimeException("Heladera no encontrada: " + heladeraID);
       }
+      if (heladera.estaActiva() == false) {
         //Creacion de incidente que dehabilita la heladera y notifica a los colaboradores
         Incidente incidente = new Incidente(TipoIncidente.Fraude, heladeraID);
         incidenteEnHeladera(incidente);
+      }
+      else{ System.out.println("La Heladera "+ heladeraID + " Detectò movimiento, aun estando desactivada. \n");}
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException("Error en movimiento de heladera " + heladeraID + ": " + e.getMessage());

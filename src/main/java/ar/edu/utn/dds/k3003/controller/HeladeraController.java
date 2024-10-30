@@ -4,6 +4,7 @@ import ar.edu.utn.dds.k3003.Service.IncidenteService;
 import ar.edu.utn.dds.k3003.app.Fachada;
 import ar.edu.utn.dds.k3003.model.DTO.SuscripcionDTO;
 import ar.edu.utn.dds.k3003.model.Heladera;
+import ar.edu.utn.dds.k3003.model.TipoSuscripcion;
 import ar.edu.utn.dds.k3003.utils.utilsMetrics;
 import ar.edu.utn.dds.k3003.facades.dtos.HeladeraDTO;
 import ar.edu.utn.dds.k3003.facades.dtos.RetiroDTO;
@@ -20,6 +21,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+
+import static ar.edu.utn.dds.k3003.model.TipoSuscripcion.*;
 
 //TODO FALTA LA PARTE DE DESHABILITAR HELADERA Y QUE SI ESTA DESHABILITADA PASEMOS DE LARGO Y TIREMOS ERROR!
 public class HeladeraController{
@@ -232,7 +235,7 @@ public class HeladeraController{
 
     public void registrarSuscripcion(Context context){
         SuscripcionDTO suscripcionDTO = context.bodyAsClass(SuscripcionDTO.class);
-        Set<String> tiposValidosSuscripciones = Set.of("Viandas Disponibles", "Faltante Viandas", "Heladera Desperfecto");
+        Set<TipoSuscripcion> tiposValidosSuscripciones = Set.of(ViandasDisponibles,FaltanteViandas,HeladeraDesperfecto);
         if (suscripcionDTO.tipoSuscripcion == null || suscripcionDTO.heladeraId == null || suscripcionDTO.colaboradorId == null) {
             context.status(HttpStatus.BAD_REQUEST);
             context.result("Heladera ID, Colaborador ID y Tipo de Suscripcion son obligatorios.");

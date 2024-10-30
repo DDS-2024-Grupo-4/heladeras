@@ -74,8 +74,8 @@ public class WebApp {
         app.post("/temperaturasEnCola/registrar", heladeraController::registrarTemperaturaEnCola);
         app.get("/heladeras/{heladeraId}/temperaturas", heladeraController::obtenerTemperaturas);
         app.post("/suscripciones", heladeraController::registrarSuscripcion);
-        app.get("/heladera/{heladeraId}/reportarFalla", heladeraController::reportarFalla);
-        app.get("/heladera/{heladeraId}/arreglarFalla", heladeraController::arreglarFalla);
+        app.get("/heladeras/{heladeraId}/reportarFalla", heladeraController::reportarFalla);
+        app.get("/heladeras/{heladeraId}/arreglarFalla", heladeraController::arreglarFalla);
         app.delete("/{heladeraId}/suscripciones", heladeraController::eliminarSuscripcion);
         app.get("/{heladeraId}/suscripciones", heladeraController::obtenerSuscripciones);
         //TODO borrar esto es unicamente prueba

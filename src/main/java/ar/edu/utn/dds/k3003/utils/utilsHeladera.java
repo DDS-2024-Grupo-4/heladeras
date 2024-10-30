@@ -10,13 +10,13 @@ public class utilsHeladera {
     public static void crearHeladeras(Fachada fachada){
 
             HeladeraDTO heladeraNuevaDTO1 = new HeladeraDTO(null, "Heladera1", null);
-            //HeladeraDTO heladeraNuevaDTO2 = new HeladeraDTO(null, "Heladera2", null);
-            //HeladeraDTO heladeraNuevaDTO3 = new HeladeraDTO(null, "Heladera3", null);
+            HeladeraDTO heladeraNuevaDTO2 = new HeladeraDTO(null, "Heladera2", null);
+            HeladeraDTO heladeraNuevaDTO3 = new HeladeraDTO(null, "Heladera3", null);
 
             //Guardp y obtengo sus nuevos IDs asignados
             fachada.agregar(heladeraNuevaDTO1);
-            //fachada.agregar(heladeraNuevaDTO2);
-            //fachada.agregar(heladeraNuevaDTO3);
+            fachada.agregar(heladeraNuevaDTO2);
+            fachada.agregar(heladeraNuevaDTO3);
 
         }
         public static void borrarTodo(Fachada fachada){
