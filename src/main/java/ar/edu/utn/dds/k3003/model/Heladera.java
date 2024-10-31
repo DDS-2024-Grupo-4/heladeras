@@ -76,6 +76,10 @@ public class Heladera {
         return this.sensorTemperatura.getUltimaTemperaRegistrada();
     }
 
+    public Integer cantidadDeViandasQueQuedanHastaLlenar(){
+        return this.cantidadMaximaViandas - this.viandas.size();
+    }
+
     public Map<Integer, LocalDateTime> obtenerTemperaturaHeladera(){
         return this.sensorTemperatura.obtenerTodasLasTemperaturas();
     }
@@ -177,9 +181,9 @@ public class Heladera {
         return java.time.Duration.between(desde, hasta).toMinutes();
     }
 
-    public Map<Long, Integer> getColaboradorIDsuscripcionNViandasDisponibles(Integer nViandasDisponibles) {
+    public Map<Long, Integer> getColaboradorIDsuscripcionNViandasDisponiblesFiltradoByN(Integer nViandasDisponibles) {
         Map<Long, Integer> colaboradoresAAvisar = this.colaboradorIDsuscripcionNViandasDisponibles.entrySet().stream()
-            .filter(entry -> entry.getValue() <= nViandasDisponibles) // Filtro los colaboradores que quieren saber si hay menos de nViandasDisponibles
+            .filter(entry -> entry.getValue() >= nViandasDisponibles) // Filtro los colaboradores que quieren saber si hay menos de nViandasDisponibles
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)); // Creo un nuevo Map
         return colaboradoresAAvisar;
     }
@@ -188,11 +192,12 @@ public class Heladera {
         this.colaboradorIDsuscripcionNViandasDisponibles.put(colaboradorId, nViandasDisponibles);
     }
 
-    public Map<Long, Integer> getColaboradorIDsuscripcionCantidadFaltantesViandas(Integer nViandasDisponibles) {
-        Map<Long, Integer> colaboradoresAAvisar = this.colaboradorIDsuscripcionNViandasDisponibles.entrySet().stream()
-            .filter(entry -> entry.getValue() >= nViandasDisponibles) // Filtro los colaboradores que quieren saber cuantas quedan disponibles
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)); // Creo un nuevo Map
-        return colaboradoresAAvisar;
+    public List<Long> getColaboradorIDsuscripcionCantidadFaltantesViandasByNumber() {
+        int cantidadFaltante = this.cantidadDeViandasQueQuedanHastaLlenar();
+        return colaboradorIDsuscripcionNViandasDisponibles.entrySet().stream()
+                .filter(entry -> entry.getValue() >= cantidadFaltante) // Filtra si la cantidad faltante del colaborador es 10 o menos
+                .map(Map.Entry::getKey) // Extrae solo los IDs de los colaboradores
+                .collect(Collectors.toList()); // Recoge en una lista
     }
 
     public void setColaboradorIDsuscripcionCantidadFaltantesViandas(Long colaboradorId, Integer nViandasDisponibles) {

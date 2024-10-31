@@ -12,7 +12,6 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.TypedQuery;
 import java.time.LocalDateTime;
 import java.util.*;
-
 import static ar.edu.utn.dds.k3003.app.WebApp.incidenteService;
 
 public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
@@ -110,12 +109,11 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             fachadaViandas.modificarHeladera(vianda.getCodigoQR(), heladeraID);
 
             heladera.guardarVianda(qrVianda);
-            Integer cantidadDeViandasFaltantesPorRetirar = heladera.cantidadDeViandas();
-            Map<Long, Integer> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionCantidadFaltantesViandas(cantidadDeViandasFaltantesPorRetirar);
-            for (Map.Entry<Long, Integer> entry : colaboradoresParaAvisar.entrySet()) {
-                Long colaboradorId = entry.getKey();
-                Integer viandasFaltanteParaLLenar = entry.getValue();;
-                SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorId, heladera.getHeladeraId(), TipoSuscripcion.FaltanteViandas, viandasFaltanteParaLLenar);
+            Integer cantidadDeViandasFaltantesPorRetirar = heladera.cantidadDeViandasQueQuedanHastaLlenar();
+            List<Long> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionCantidadFaltantesViandasByNumber();
+            for (Long colaboradorID : colaboradoresParaAvisar) {
+                Long colaboradorId = colaboradorID;
+                SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorId, heladera.getHeladeraId(), TipoSuscripcion.FaltanteViandas, cantidadDeViandasFaltantesPorRetirar);
                 utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
             }
 
@@ -209,7 +207,8 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
 
             heladera.retirarVianda(retiroDTO.getQrVianda());
             Integer cantidadDeViandasFaltantesPorRetirar = heladera.cantidadDeViandas();
-            Map<Long, Integer> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionNViandasDisponibles(cantidadDeViandasFaltantesPorRetirar);
+            Map<Long, Integer> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionNViandasDisponiblesFiltradoByN(cantidadDeViandasFaltantesPorRetirar);
+            System.out.println(colaboradoresParaAvisar);
             for (Map.Entry<Long, Integer> entry : colaboradoresParaAvisar.entrySet()) {
                 Long colaboradorId = entry.getKey();
                 Integer viandasDisponibles = entry.getValue();
