@@ -12,11 +12,11 @@ import ar.edu.utn.dds.k3003.model.Incidente;
  * **/
 public class utilsNotifIncidentAndEvents {
 
-    public static void notificarFallaEnHeladera(Incidente incidente) {
+    public static void notificarFallaEnHeladeraTopic(Incidente incidente) {
         System.out.println("\n notification:\n" + incidente +"\n");
     }
 
-    public static void notificarArregloDeHeladera(Integer heladeraId) {
+    public static void notificarArregloDeHeladeraEnTopic(Integer heladeraId) {
         System.out.println("\n Heladera Arreglada: " + heladeraId+"\n");
     }
 

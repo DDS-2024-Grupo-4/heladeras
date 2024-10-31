@@ -10,8 +10,6 @@ import ar.edu.utn.dds.k3003.utils.utilsNotifIncidentAndEvents;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /***
@@ -38,7 +36,10 @@ public class IncidenteService {
         System.out.println("\nInhabilitando la heladera");
         fachadaHeladera.inhabilitarHeladera(incidente.getHeladeraId());
         if (!incidenteYaNotificado(incidente)){
+          System.out.println("Incidente sin notificar, procediendo a notificarlo..");
+          //Aca le avisamos a todos los suscriptores de una falla
         fachadaHeladera.avisoIncidenteDesperfectoHeladera(incidente.getHeladeraId());
+          //Aca nos encargamos de avisar a los topics en caso que sea necesario
         Incidente incidenteGuardado = guardadoNuevoIncidente(incidente);
         if (incidenteGuardado.getTipoIncidente().equals(TipoIncidente.FallaEnConexion)){
           utilsNotifIncidentAndEvents.notificarFallaEnConexionEnTopic(incidenteGuardado);
@@ -52,7 +53,7 @@ public class IncidenteService {
           utilsNotifIncidentAndEvents.notificarFraudeHeladeraEnTopic(incidenteGuardado);
         }
         if (incidenteGuardado.getTipoIncidente().equals(TipoIncidente.FallaDeHeladera)){
-          utilsNotifIncidentAndEvents.notificarFallaEnHeladera(incidenteGuardado);
+          utilsNotifIncidentAndEvents.notificarFallaEnHeladeraTopic(incidenteGuardado);
         }
       }
       }catch (Exception e){
@@ -68,7 +69,7 @@ public class IncidenteService {
 
   public void reparacionHeladera(Integer heladeraId){
     fachadaHeladera.habilitarHeladera(heladeraId,true);
-    utilsNotifIncidentAndEvents.notificarArregloDeHeladera(heladeraId);
+    utilsNotifIncidentAndEvents.notificarArregloDeHeladeraEnTopic(heladeraId);
   }
 
   public Boolean verificarExcesoTemperatura(Heladera heladera, TemperaturaDTO temperaturaDTO) {

@@ -392,13 +392,11 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             if (heladera == null) {
                 throw new NoSuchElementException("No se encontró la heladera con ID: " + heladeraID);
             }
-
             // Manejo del aviso a los suscriptores del evento
             for (Long colaboradorId : heladera.getColaboradorIDsuscripcionDesperfectoHeladera()) {
                 SuscripcionDTO suscripcionDTO = new SuscripcionDTO(colaboradorId, heladeraID, TipoSuscripcion.HeladeraDesperfecto);
                 utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
             }
-
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Error al avisar del Incidente a los Suscriptores: " + e.getMessage());
