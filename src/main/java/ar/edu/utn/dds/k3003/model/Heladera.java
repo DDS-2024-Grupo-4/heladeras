@@ -54,13 +54,13 @@ public class Heladera {
     public Heladera(String nombre){
         this.nombre = nombre;
         this.coordenadas = new Coordenadas(randomNumberBetween(0,255), randomNumberBetween(0,255));
-        this.cantidadMaximaViandas = randomNumberBetween(10,25);
+        this.cantidadMaximaViandas = 3;
         this.estadoActivo = true;
         this.modelo = generarModeloAleatorio();
         this.direccion = generarDireccionAleatoria();
         this.temperaturaMaxima = randomNumberBetween(10,15);
         this.temperaturaMinima = randomNumberBetween(0,3);
-        this.umbralTemperatura = randomNumberBetween(1,2);
+        this.umbralTemperatura = randomNumberBetween(4,6);
         this.tiempoMaximoUltimoReciboTemperatura = randomNumberBetween(3,4);
     }
 
