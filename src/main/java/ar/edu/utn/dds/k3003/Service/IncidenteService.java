@@ -142,7 +142,7 @@ public class IncidenteService {
       if (heladera == null) {
         throw new RuntimeException("Heladera no encontrada: " + heladeraID);
       }
-      if (heladera.estaActiva() == false) {
+      if (heladera.estaActiva() != false) {
         //Creacion de incidente que dehabilita la heladera y notifica a los colaboradores
         Incidente incidente = new Incidente(TipoIncidente.Fraude, heladeraID);
         incidenteEnHeladera(incidente);
