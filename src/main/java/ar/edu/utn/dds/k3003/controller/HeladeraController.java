@@ -79,15 +79,12 @@ public class HeladeraController{
 
     public void depositarVianda(@NotNull Context context){
         try{
-            String heladeraIdParam = context.pathParam("heladeraId");
-            Integer heladeraId = Integer.valueOf(heladeraIdParam);
-            if(!fachada.heladeraHabilitada(heladeraId)){
+            DepositoDTO depositoDTO = context.bodyAsClass(DepositoDTO.class);
+            if(!fachada.heladeraHabilitada(depositoDTO.getHeladeraId())){
                 context.status(HttpStatus.FORBIDDEN);
                 context.result("La heladera no está habilitada.");
                 return;
             }
-            String codigoQR = context.formParam("qrVianda");
-            DepositoDTO depositoDTO = new DepositoDTO(heladeraId, codigoQR);
             if (!fachada.existeHeladera(depositoDTO.getHeladeraId())) {
                 context.status(HttpStatus.NOT_FOUND);
                 context.result("Heladera no encontrada :c");
