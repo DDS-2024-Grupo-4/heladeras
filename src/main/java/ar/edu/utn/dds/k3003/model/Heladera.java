@@ -182,7 +182,7 @@ public class Heladera {
     }
 
     public List<Long> getColaboradorIDsuscripcionNViandasDisponiblesFiltrado() {
-        Integer cantidadDeViandasActual = heladera.cantidadDeViandas();
+        Integer cantidadDeViandasActual = this.cantidadDeViandas();
          return this.colaboradorIDsuscripcionNViandasDisponibles.entrySet().stream()
             .filter(entry -> entry.getValue() <= cantidadDeViandasActual)
             .map(Map.Entry::getKey)// Filtro los colaboradores que quieren saber si hay menos de nViandasDisponibles para retirar
