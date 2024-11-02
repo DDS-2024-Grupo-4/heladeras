@@ -24,10 +24,8 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
     public void avisoDeFaltantesPorRetirar(Heladera heladera){
         Integer cantidadDeViandasActual = heladera.cantidadDeViandas();
         List<Long> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionNViandasDisponiblesFiltrado();
-        for (Map.Entry<Long, Integer> entry : colaboradoresParaAvisar.entrySet()) {
-            Long colaboradorId = entry.getKey();
-            Integer viandasDisponibles = entry.getValue();
-            SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorId, heladera.getHeladeraId(), TipoSuscripcion.ViandasDisponibles, cantidadDeViandasActual);
+        for (Long colaboradorID : colaboradoresParaAvisar) {
+            SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorID, heladera.getHeladeraId(), TipoSuscripcion.ViandasDisponibles, cantidadDeViandasActual);
             utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
         }
     }
@@ -36,8 +34,7 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
         int cantidadFaltanteHastaLlenarse = this.cantidadDeViandasQueQuedanHastaLlenar();
         List<Long> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionCantidadFaltantesViandasByNumber();
         for (Long colaboradorID : colaboradoresParaAvisar) {
-            Long colaboradorId = colaboradorID;
-            SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorId, heladera.getHeladeraId(), TipoSuscripcion.FaltanteViandas, cantidadDeViandasFaltantesPorRetirar);
+            SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorID, heladera.getHeladeraId(), TipoSuscripcion.FaltanteViandas, cantidadDeViandasFaltantesPorRetirar);
             utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
         }
     }
