@@ -149,6 +149,58 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
         }
     }
 
+    public void setearEn5() {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try {
+            Heladera heladera = entityManager.find(Heladera.class, 1);
+
+            heladera.guardarVianda("asd");
+
+            this.avisoCantidadViandasFaltantesParaLLenarse(heladera);
+            this.avisoDeFaltantesPorRetirar(heladera);
+
+            entityManager.merge(heladera);
+
+        } catch (Exception e) {
+            if (entityManager.getTransaction().isActive()) {
+                entityManager.getTransaction().rollback();
+            }
+            e.printStackTrace();
+            throw new RuntimeException("Error al agregar la heladera: " + e.getMessage());
+        } finally {
+            entityManager.getTransaction().commit();
+            entityManager.close();
+        }
+
+    }
+
+    public void setearEn1() {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try {
+
+            Heladera heladera = entityManager.find(Heladera.class, 1);
+            heladera.retirarVianda("asd");
+
+            this.avisoDeFaltantesPorRetirar(heladera);
+            this.avisoCantidadViandasFaltantesParaLLenarse(heladera);
+
+            entityManager.merge(heladera);
+
+        } catch (Exception e) {
+            if (entityManager.getTransaction().isActive()) {
+                entityManager.getTransaction().rollback();
+            }
+            e.printStackTrace();
+            throw new RuntimeException("Error al procesar el retiro: " + e.getMessage());
+        } finally {
+            entityManager.getTransaction().commit();
+            entityManager.close();
+        }
+
+    }
+
     @Override
     public Integer cantidadViandas(Integer heladeraID) throws NoSuchElementException {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -473,4 +525,5 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
     public void setViandasProxy(FachadaViandas fachadaViandas) {
         this.fachadaViandas = fachadaViandas;
     }
+
 }

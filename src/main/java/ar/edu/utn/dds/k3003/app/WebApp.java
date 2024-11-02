@@ -84,6 +84,8 @@ public class WebApp {
             heladerasExcluidasDeSeteoTemperatura.add(heladeraId); // Añadir a la lista de heladeras excluidas
             ctx.result("Heladera " + heladeraId + " excluida del registro de temperatura.");
         });
+        app.get("/setearEn5",heladeraController::setearEn5);
+        app.get("/setearEn1",heladeraController::setearEn1);
         //TODO borrar esto es unicamente prueba
         app.get("/continue/temperaturaHeladera/{heladeraId}", ctx -> {
             Integer heladeraId = Integer.parseInt(ctx.pathParam("heladeraId"));

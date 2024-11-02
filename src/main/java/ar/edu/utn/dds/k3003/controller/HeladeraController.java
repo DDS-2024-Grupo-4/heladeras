@@ -312,4 +312,12 @@ public class HeladeraController{
             context.status(500).result("Error de Servidor: " + e.getMessage());
         }
     }
+
+    public void setearEn5(Context context) {
+        fachada.setearEn5();
+    }
+
+    public void setearEn1(Context context) {
+        fachada.setearEn1();
+    }
 }
