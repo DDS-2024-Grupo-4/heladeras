@@ -121,7 +121,7 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             if (heladera == null) {
                 throw new NoSuchElementException("No se encontró la heladera con ID: " + heladeraID);
             }
-             vianda = fachadaViandas.buscarXQR(qrVianda);
+            ViandaDTO vianda = fachadaViandas.buscarXQR(qrVianda);
 
             fachadaViandas.modificarEstado(vianda.getCodigoQR(), EstadoViandaEnum.DEPOSITADA);
             fachadaViandas.modificarHeladera(vianda.getCodigoQR(), heladeraID);
