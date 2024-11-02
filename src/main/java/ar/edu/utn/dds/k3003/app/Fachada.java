@@ -34,7 +34,7 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
         int cantidadFaltanteHastaLlenarse = this.cantidadDeViandasQueQuedanHastaLlenar();
         List<Long> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionCantidadFaltantesViandasByNumber();
         for (Long colaboradorID : colaboradoresParaAvisar) {
-            SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorID, heladera.getHeladeraId(), TipoSuscripcion.FaltanteViandas, cantidadDeViandasFaltantesPorRetirar);
+            SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorID, heladera.getHeladeraId(), TipoSuscripcion.FaltanteViandas, cantidadFaltanteHastaLlenarse);
             utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
         }
     }
