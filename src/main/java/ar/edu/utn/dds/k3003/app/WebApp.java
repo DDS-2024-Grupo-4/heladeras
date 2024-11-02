@@ -69,7 +69,7 @@ public class WebApp {
         app.get("/heladeras/deleteAll", heladeraController::borrarTodo);
         app.post("/heladeras", heladeraController::agregar);
         app.get("/heladeras/{heladeraId}", heladeraController::obtenerHeladera);
-        app.post("/depositos", heladeraController::depositarVianda);
+        app.post("/depositos/{heladeraId}/{qrVianda}", heladeraController::depositarVianda);
         app.post("/retiros", heladeraController::retirarVianda);
         app.post("/temperaturasEnCola/registrar", heladeraController::registrarTemperaturaEnCola);
         app.get("/heladeras/{heladeraId}/temperaturas", heladeraController::obtenerTemperaturas);
