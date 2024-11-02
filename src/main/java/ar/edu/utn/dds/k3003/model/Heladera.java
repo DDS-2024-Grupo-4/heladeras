@@ -181,11 +181,12 @@ public class Heladera {
         return java.time.Duration.between(desde, hasta).toMinutes();
     }
 
-    public Map<Long, Integer> getColaboradorIDsuscripcionNViandasDisponiblesFiltradoByN(Integer nViandasDisponibles) {
-        Map<Long, Integer> colaboradoresAAvisar = this.colaboradorIDsuscripcionNViandasDisponibles.entrySet().stream()
-            .filter(entry -> entry.getValue() >= nViandasDisponibles) // Filtro los colaboradores que quieren saber si hay menos de nViandasDisponibles
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)); // Creo un nuevo Map
-        return colaboradoresAAvisar;
+    public List<Long> getColaboradorIDsuscripcionNViandasDisponiblesFiltrado() {
+        Integer cantidadDeViandasActual = heladera.cantidadDeViandas();
+         return this.colaboradorIDsuscripcionNViandasDisponibles.entrySet().stream()
+            .filter(entry -> entry.getValue() <= cantidadDeViandasActual)
+            .map(Map.Entry::getKey)// Filtro los colaboradores que quieren saber si hay menos de nViandasDisponibles para retirar
+            .collect(Collectors.toList()); // Creo un nuevo List
     }
 
     public void setColaboradorIDsuscripcionNViandasDisponibles(Long colaboradorId, Integer nViandasDisponibles) {
@@ -193,9 +194,9 @@ public class Heladera {
     }
 
     public List<Long> getColaboradorIDsuscripcionCantidadFaltantesViandasByNumber() {
-        int cantidadFaltante = this.cantidadDeViandasQueQuedanHastaLlenar();
+        int cantidadFaltanteHastaLlenarse = this.cantidadDeViandasQueQuedanHastaLlenar();
         return colaboradorIDsuscripcionCantidadFaltantesViandas.entrySet().stream()
-                .filter(entry -> entry.getValue() <= cantidadFaltante) // Filtra si la cantidad faltante del colaborador es 10 o menos
+                .filter(entry -> entry.getValue() <= cantidadFaltanteHastaLlenarse) // Filtra si la cantidad faltante  de viandas hasta llenarse es menor
                 .map(Map.Entry::getKey) // Extrae solo los IDs de los colaboradores
                 .collect(Collectors.toList()); // Recoge en una lista
     }
