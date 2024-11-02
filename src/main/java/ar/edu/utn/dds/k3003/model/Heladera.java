@@ -195,7 +195,7 @@ public class Heladera {
     public List<Long> getColaboradorIDsuscripcionCantidadFaltantesViandasByNumber() {
         int cantidadFaltante = this.cantidadDeViandasQueQuedanHastaLlenar();
         return colaboradorIDsuscripcionCantidadFaltantesViandas.entrySet().stream()
-                .filter(entry -> entry.getValue() >= cantidadFaltante) // Filtra si la cantidad faltante del colaborador es 10 o menos
+                .filter(entry -> entry.getValue() <= cantidadFaltante) // Filtra si la cantidad faltante del colaborador es 10 o menos
                 .map(Map.Entry::getKey) // Extrae solo los IDs de los colaboradores
                 .collect(Collectors.toList()); // Recoge en una lista
     }
