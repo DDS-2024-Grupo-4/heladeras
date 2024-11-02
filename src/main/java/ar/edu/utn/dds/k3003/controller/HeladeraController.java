@@ -2,6 +2,7 @@ package ar.edu.utn.dds.k3003.controller;
 
 import ar.edu.utn.dds.k3003.Service.IncidenteService;
 import ar.edu.utn.dds.k3003.app.Fachada;
+import ar.edu.utn.dds.k3003.model.DTO.HeladeraDtoPerso;
 import ar.edu.utn.dds.k3003.model.DTO.SuscripcionDTO;
 import ar.edu.utn.dds.k3003.model.Heladera;
 import ar.edu.utn.dds.k3003.model.TipoSuscripcion;
@@ -54,13 +55,14 @@ public class HeladeraController{
             String heladeraIdParam = context.pathParam("heladeraId");
             Integer heladeraId = Integer.valueOf(heladeraIdParam);
             Heladera heladera = fachada.obtenerHeladera(heladeraId);
-            HeladeraDTO heladeraDTO = new HeladeraDTO(
+            HeladeraDtoPerso heladeraDtoPerso = new HeladeraDtoPerso(
                 heladera.getHeladeraId(),
                 heladera.getNombre(),
-                heladera.cantidadDeViandas()
+                heladera.cantidadDeViandas(),
+                heladera.estaActiva()
             );
             utilsMetrics.enviarConsultaNuevaDeHeladera();
-            context.json(heladeraDTO);
+            context.json(heladeraDtoPerso);
             context.status(HttpStatus.OK);
         } catch (NoSuchElementException e) {
             context.status(HttpStatus.NOT_FOUND);

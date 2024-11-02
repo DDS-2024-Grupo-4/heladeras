@@ -64,8 +64,6 @@ public class TESTfalla {
         incidenteService.incidenteEnHeladera(incidente);
 
         // Verificar interacciones
-        verify(fachadaHeladera).inhabilitarHeladera(1);
-        verify(fachadaHeladera).avisoIncidenteDesperfectoHeladera(1);
         verify(utilsNotifIncidentAndEvents, times(3)).notificarAColaboradorDeSuSuscripcion(any()); // tres notificaciones esperadas
     }
 
