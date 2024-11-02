@@ -121,10 +121,10 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             if (heladera == null) {
                 throw new NoSuchElementException("No se encontró la heladera con ID: " + heladeraID);
             }
-            // vianda = fachadaViandas.buscarXQR(qrVianda);
+             vianda = fachadaViandas.buscarXQR(qrVianda);
 
-            //fachadaViandas.modificarEstado(vianda.getCodigoQR(), EstadoViandaEnum.DEPOSITADA);
-            //fachadaViandas.modificarHeladera(vianda.getCodigoQR(), heladeraID);
+            fachadaViandas.modificarEstado(vianda.getCodigoQR(), EstadoViandaEnum.DEPOSITADA);
+            fachadaViandas.modificarHeladera(vianda.getCodigoQR(), heladeraID);
 
             heladera.guardarVianda(qrVianda);
 
@@ -263,13 +263,13 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             if (heladera == null) {
                 throw new NoSuchElementException("Heladera no encontrada");
             }
-            //ViandaDTO vianda = fachadaViandas.buscarXQR(retiroDTO.getQrVianda());
-            //if (vianda == null) {
-            //    throw new NoSuchElementException("Vianda no encontrada");
-            //}
+            ViandaDTO vianda = fachadaViandas.buscarXQR(retiroDTO.getQrVianda());
+            if (vianda == null) {
+                throw new NoSuchElementException("Vianda no encontrada");
+            }
 
-            //fachadaViandas.modificarEstado(vianda.getCodigoQR(), EstadoViandaEnum.RETIRADA);
-            //fachadaViandas.modificarHeladera(vianda.getCodigoQR(), -1);  // -1 SIGNIFICA SET NULL
+            fachadaViandas.modificarEstado(vianda.getCodigoQR(), EstadoViandaEnum.RETIRADA);
+            fachadaViandas.modificarHeladera(vianda.getCodigoQR(), -1);  // -1 SIGNIFICA SET NULL
 
             heladera.retirarVianda(retiroDTO.getQrVianda());
 
