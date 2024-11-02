@@ -61,7 +61,6 @@ public class HeladeraController{
                 heladera.cantidadDeViandas(),
                 heladera.estaActiva()
             );
-            utilsMetrics.enviarConsultaNuevaDeHeladera();
             context.json(heladeraDtoPerso);
             context.status(HttpStatus.OK);
         } catch (NoSuchElementException e) {
@@ -93,7 +92,7 @@ public class HeladeraController{
                 context.status(HttpStatus.NOT_FOUND);
                 context.result("Heladera no encontrada :c");
             }
-            utilsMetrics.enviarNuevaAperuraDeHeladera(depositoDTO.getHeladeraId());
+            utilsMetrics.enviarNuevaAperuraDeHeladera();
             fachada.depositar(depositoDTO.getHeladeraId(), depositoDTO.getCodigoQR());
             context.status(HttpStatus.OK);
             context.result("Vianda depositada correctamente");
@@ -117,7 +116,7 @@ public class HeladeraController{
                 context.result("La heladera no está habilitada.");
                 return;
             }
-            utilsMetrics.enviarNuevaAperuraDeHeladera(retiroDTO.getHeladeraId());
+            utilsMetrics.enviarNuevaAperuraDeHeladera();
             fachada.retirar(retiroDTO);
             context.status(HttpStatus.OK);
             context.result("Vianda retirada exitosamente");

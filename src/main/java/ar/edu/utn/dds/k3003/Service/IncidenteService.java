@@ -36,6 +36,7 @@ public class IncidenteService {
         System.out.println("\nInhabilitando la heladera");
         fachadaHeladera.inhabilitarHeladera(incidente.getHeladeraId());
         if (!incidenteYaNotificado(incidente)){
+          utilsMetrics.fallaHeladeras();
           System.out.println("Incidente sin notificar, procediendo a notificarlo..");
           //Aca le avisamos a todos los suscriptores de una falla
         fachadaHeladera.avisoIncidenteDesperfectoHeladera(incidente.getHeladeraId());
@@ -46,8 +47,6 @@ public class IncidenteService {
         }
         if (incidenteGuardado.getTipoIncidente().equals(TipoIncidente.ExcesoDeTemperatura)){
           utilsNotifIncidentAndEvents.notificarExcesoTiempoTemperaturaMaximaEnTopic(incidenteGuardado);
-          // METRICA
-          utilsMetrics.enviarExcesoTemperaturaHeladera(incidenteGuardado.getHeladeraId());
         }
         if (incidenteGuardado.getTipoIncidente().equals(TipoIncidente.Fraude)){
           utilsNotifIncidentAndEvents.notificarFraudeHeladeraEnTopic(incidenteGuardado);
@@ -55,6 +54,7 @@ public class IncidenteService {
         if (incidenteGuardado.getTipoIncidente().equals(TipoIncidente.FallaDeHeladera)){
           utilsNotifIncidentAndEvents.notificarFallaEnHeladeraTopic(incidenteGuardado);
         }
+        utilsMetrics.metricaIncidenteHeladera(true);
       }
       }catch (Exception e){
         e.printStackTrace();
@@ -70,6 +70,7 @@ public class IncidenteService {
   public void reparacionHeladera(Integer heladeraId){
     fachadaHeladera.habilitarHeladera(heladeraId,true);
     utilsNotifIncidentAndEvents.notificarArregloDeHeladeraEnTopic(heladeraId);
+    utilsMetrics.metricaIncidenteHeladera(false);
   }
 
   public Boolean verificarExcesoTemperatura(Heladera heladera, TemperaturaDTO temperaturaDTO) {

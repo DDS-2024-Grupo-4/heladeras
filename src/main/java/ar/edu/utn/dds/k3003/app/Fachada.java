@@ -21,6 +21,28 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
     public Fachada() {
     }
 
+    public void avisoDeFaltantesPorRetirar(Heladera heladera){
+        Integer cantidadDeViandasFaltantesPorRetirar = heladera.cantidadDeViandas();
+        Map<Long, Integer> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionNViandasDisponiblesFiltradoByN(cantidadDeViandasFaltantesPorRetirar);
+        System.out.println(colaboradoresParaAvisar);
+        for (Map.Entry<Long, Integer> entry : colaboradoresParaAvisar.entrySet()) {
+            Long colaboradorId = entry.getKey();
+            Integer viandasDisponibles = entry.getValue();
+            SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorId, heladera.getHeladeraId(), TipoSuscripcion.ViandasDisponibles, viandasDisponibles);
+            utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
+        }
+    }
+
+    public void avisoCantidadViandasFaltantesParaLLenarse(Heladera heladera){
+        Integer cantidadDeViandasFaltantesPorRetirar = heladera.cantidadDeViandasQueQuedanHastaLlenar();
+        List<Long> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionCantidadFaltantesViandasByNumber();
+        for (Long colaboradorID : colaboradoresParaAvisar) {
+            Long colaboradorId = colaboradorID;
+            SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorId, heladera.getHeladeraId(), TipoSuscripcion.FaltanteViandas, cantidadDeViandasFaltantesPorRetirar);
+            utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
+        }
+    }
+
     public Boolean heladeraHabilitada(Integer heladeraID){
         Heladera heladera = obtenerHeladera(heladeraID);
         return heladera.estaActiva();
@@ -109,13 +131,9 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             fachadaViandas.modificarHeladera(vianda.getCodigoQR(), heladeraID);
 
             heladera.guardarVianda(qrVianda);
-            Integer cantidadDeViandasFaltantesPorRetirar = heladera.cantidadDeViandasQueQuedanHastaLlenar();
-            List<Long> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionCantidadFaltantesViandasByNumber();
-            for (Long colaboradorID : colaboradoresParaAvisar) {
-                Long colaboradorId = colaboradorID;
-                SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorId, heladera.getHeladeraId(), TipoSuscripcion.FaltanteViandas, cantidadDeViandasFaltantesPorRetirar);
-                utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
-            }
+
+            this.avisoCantidadViandasFaltantesParaLLenarse(heladera);
+            this.avisoDeFaltantesPorRetirar(heladera);
 
             entityManager.merge(heladera);
 
@@ -206,15 +224,10 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             fachadaViandas.modificarHeladera(vianda.getCodigoQR(), -1);  // -1 SIGNIFICA SET NULL
 
             heladera.retirarVianda(retiroDTO.getQrVianda());
-            Integer cantidadDeViandasFaltantesPorRetirar = heladera.cantidadDeViandas();
-            Map<Long, Integer> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionNViandasDisponiblesFiltradoByN(cantidadDeViandasFaltantesPorRetirar);
-            System.out.println(colaboradoresParaAvisar);
-            for (Map.Entry<Long, Integer> entry : colaboradoresParaAvisar.entrySet()) {
-                Long colaboradorId = entry.getKey();
-                Integer viandasDisponibles = entry.getValue();
-                SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorId, heladera.getHeladeraId(), TipoSuscripcion.ViandasDisponibles, viandasDisponibles);
-                utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
-            }
+
+            this.avisoDeFaltantesPorRetirar(heladera);
+            this.avisoCantidadViandasFaltantesParaLLenarse(heladera);
+
             entityManager.merge(heladera);
 
         } catch (Exception e) {
