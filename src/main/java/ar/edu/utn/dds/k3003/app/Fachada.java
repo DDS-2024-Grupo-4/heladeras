@@ -22,19 +22,18 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
     }
 
     public void avisoDeFaltantesPorRetirar(Heladera heladera){
-        Integer cantidadDeViandasFaltantesPorRetirar = heladera.cantidadDeViandas();
-        Map<Long, Integer> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionNViandasDisponiblesFiltradoByN(cantidadDeViandasFaltantesPorRetirar);
-        System.out.println(colaboradoresParaAvisar);
+        Integer cantidadDeViandasActual = heladera.cantidadDeViandas();
+        List<Long> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionNViandasDisponiblesFiltrado();
         for (Map.Entry<Long, Integer> entry : colaboradoresParaAvisar.entrySet()) {
             Long colaboradorId = entry.getKey();
             Integer viandasDisponibles = entry.getValue();
-            SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorId, heladera.getHeladeraId(), TipoSuscripcion.ViandasDisponibles, viandasDisponibles);
+            SuscripcionDTO suscripcionDTO = new SuscripcionDTO( colaboradorId, heladera.getHeladeraId(), TipoSuscripcion.ViandasDisponibles, cantidadDeViandasActual);
             utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
         }
     }
 
     public void avisoCantidadViandasFaltantesParaLLenarse(Heladera heladera){
-        Integer cantidadDeViandasFaltantesPorRetirar = heladera.cantidadDeViandasQueQuedanHastaLlenar();
+        int cantidadFaltanteHastaLlenarse = this.cantidadDeViandasQueQuedanHastaLlenar();
         List<Long> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionCantidadFaltantesViandasByNumber();
         for (Long colaboradorID : colaboradoresParaAvisar) {
             Long colaboradorId = colaboradorID;
