@@ -399,8 +399,8 @@ public class HeladeraController{
     }
     public void borrarTodo(Context context){
         try {
-            utilsHeladera.borrarTodo(this.fachada);
-            context.status(200).result("Todo borrado por aca :P");
+            fachada.eliminarTablasDirectamenteYResetearIDs();
+            context.status(200).result("Borrado Completo");
         } catch (Exception e) {
             context.status(500).result("Error de Servidor: " + e.getMessage());
         }

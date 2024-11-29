@@ -11,6 +11,7 @@ import ar.edu.utn.dds.k3003.model.Heladera;
 import ar.edu.utn.dds.k3003.model.SensorTemperatura;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
 import javax.persistence.TypedQuery;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -634,6 +635,39 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             entityManager.close();
         }
     }
+    
+    public void eliminarTablasDirectamenteYResetearIDs() {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        EntityTransaction transaction = entityManager.getTransaction();
+
+        try {
+            transaction.begin();
+
+            // Ejecutar DROP TABLE en el orden correcto
+            entityManager.createNativeQuery("DROP TABLE IF EXISTS sensortemperatura CASCADE").executeUpdate();
+            entityManager.createNativeQuery("DROP TABLE IF EXISTS incidente CASCADE").executeUpdate();
+            entityManager.createNativeQuery("DROP TABLE IF EXISTS heladera CASCADE").executeUpdate();
+            entityManager.createNativeQuery("DROP TABLE IF EXISTS heladera_viandas CASCADE").executeUpdate();
+            // Restablecer los contadores de ID (resetear autoincrement)
+
+            entityManager.createNativeQuery("TRUNCATE TABLE incidente RESTART IDENTITY").executeUpdate();
+            entityManager.createNativeQuery("TRUNCATE TABLE heladera RESTART IDENTITY").executeUpdate();
+            entityManager.createNativeQuery("TRUNCATE TABLE sensortemperatura RESTART IDENTITY").executeUpdate();
+            entityManager.createNativeQuery("TRUNCATE TABLE heladera_viandas RESTART IDENTITY").executeUpdate();
+
+            // Confirmar la transacción
+            transaction.commit();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (transaction.isActive()) {
+                transaction.rollback();  // Revertir si ocurre un error
+            }
+        } finally {
+            entityManager.close();
+        }
+    }
+
 
     @Override
     public void setViandasProxy(FachadaViandas fachadaViandas) {
