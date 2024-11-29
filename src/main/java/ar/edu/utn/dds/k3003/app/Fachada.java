@@ -272,6 +272,29 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
         }
     }
 
+    public List<Integer> cantidadViandasHastaLLenarInfo(Integer heladeraID){
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try {
+            Heladera heladera = entityManager.find(Heladera.class, heladeraID);
+            if (heladera == null) {
+                throw new NoSuchElementException("No se encontró la heladera con ID: " + heladeraID);
+            }
+            List<Integer> viandasInfo = new ArrayList<>();
+
+            viandasInfo.add(heladera.cantidadDeViandasQueQuedanHastaLlenar());
+            viandasInfo.add(heladera.getCantidadMaximaViandas());
+
+            return viandasInfo;
+        } catch (Exception e) {
+            e.printStackTrace();
+            entityManager.getTransaction().rollback();
+            return null;
+        } finally {
+            entityManager.close();
+        }
+    }
+
     public void limpiarRetirosDelDia() {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         entityManager.getTransaction().begin();

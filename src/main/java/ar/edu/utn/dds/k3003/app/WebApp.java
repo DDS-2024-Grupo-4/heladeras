@@ -81,6 +81,7 @@ public class WebApp {
         app.get("/heladeras/{heladeraId}/viandasEnHeladera", heladeraController::viandasEnHeladera);
         app.get("/heladera/{heladeraId}/obtenerHistorialIncidentes", heladeraController::obtenerHistorialIncidentes);
         app.get("/heladera/{heladeraId}/obtenerRetirosDelDia", heladeraController::obtenerRetirosDelDia);
+        app.get("/heladera/{heladeraId}/cantidadViandasHastaLLenar", heladeraController::cantidadViandasHastaLLenar);
         app.delete("/{heladeraId}/suscripciones", heladeraController::eliminarSuscripcion);
         app.get("/{heladeraId}/suscripciones", heladeraController::obtenerSuscripciones);
         //TODO borrar esto es unicamente prueba

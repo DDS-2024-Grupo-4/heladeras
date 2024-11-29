@@ -250,6 +250,29 @@ public class HeladeraController{
         }
     }
 
+    public void cantidadViandasHastaLLenar(@NotNull Context context){
+        try{
+            Integer heladeraId = Integer.valueOf(context.pathParam("heladeraId"));
+            if (!fachada.existeHeladera(heladeraId)) {
+                throw new NoSuchElementException();
+            }
+            // Obtiene una lista de Integers (cantidad hasta llenar y máxima de viandas)
+            List<Integer> viandasInfo = fachada.cantidadViandasHastaLLenarInfo(heladeraId);
+            context.json(viandasInfo);
+            context.status(HttpStatus.OK);
+        }
+        catch(NoSuchElementException e){
+            context.result(e.getLocalizedMessage());
+            context.status(HttpStatus.BAD_REQUEST);
+            context.result("Heladera no encontrada");
+        }
+        catch (RuntimeException e){
+            context.result(e.getLocalizedMessage());
+            context.status(HttpStatus.NOT_FOUND);
+            context.result("Heladera sin historial");
+        }
+    }
+
     public void obtenerHistorialIncidentes(@NotNull Context context){
         try{
             Integer heladeraId = Integer.valueOf(context.pathParam("heladeraId"));

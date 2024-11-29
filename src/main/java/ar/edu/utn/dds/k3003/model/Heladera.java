@@ -97,6 +97,10 @@ public class Heladera {
         return this.viandas;
     }
 
+    public Integer getCantidadMaximaViandas() {
+        return cantidadMaximaViandas;
+    }
+
     public void guardarVianda(String viandaQR) throws Exception {
         if (this.cantidadDeViandas() < cantidadMaximaViandas) {
             this.viandas.add(viandaQR);
