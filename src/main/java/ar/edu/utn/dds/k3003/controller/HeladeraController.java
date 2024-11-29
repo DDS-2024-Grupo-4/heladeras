@@ -406,11 +406,4 @@ public class HeladeraController{
         }
     }
 
-    public void setearEn5(Context context) {
-        fachada.setearEn5();
-    }
-
-    public void setearEn1(Context context) {
-        fachada.setearEn1();
-    }
 }
