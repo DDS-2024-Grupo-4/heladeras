@@ -635,37 +635,35 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             entityManager.close();
         }
     }
-    
-    public void eliminarTablasDirectamenteYResetearIDs() {
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        EntityTransaction transaction = entityManager.getTransaction();
 
-        try {
-            transaction.begin();
+    public void eliminarTablasDirectamenteYResetearIDs(){
+            EntityManager em = entityManagerFactory.createEntityManager();
+            em.getTransaction().begin();
 
-            // Ejecutar DROP TABLE en el orden correcto
-            entityManager.createNativeQuery("DROP TABLE IF EXISTS sensortemperatura CASCADE").executeUpdate();
-            entityManager.createNativeQuery("DROP TABLE IF EXISTS incidente CASCADE").executeUpdate();
-            entityManager.createNativeQuery("DROP TABLE IF EXISTS heladera CASCADE").executeUpdate();
-            entityManager.createNativeQuery("DROP TABLE IF EXISTS heladera_viandas CASCADE").executeUpdate();
-            // Restablecer los contadores de ID (resetear autoincrement)
+            try {
+                // Eliminar las tablas si existen
+                em.createNativeQuery("DELETE FROM sensortemperatura").executeUpdate();
+                em.createNativeQuery("DELETE FROM incidente").executeUpdate();
+                em.createNativeQuery("DELETE FROM heladera").executeUpdate();
+                em.createNativeQuery("DELETE FROM heladera_viandas").executeUpdate();
 
-            entityManager.createNativeQuery("TRUNCATE TABLE incidente RESTART IDENTITY").executeUpdate();
-            entityManager.createNativeQuery("TRUNCATE TABLE heladera RESTART IDENTITY").executeUpdate();
-            entityManager.createNativeQuery("TRUNCATE TABLE sensortemperatura RESTART IDENTITY").executeUpdate();
-            entityManager.createNativeQuery("TRUNCATE TABLE heladera_viandas RESTART IDENTITY").executeUpdate();
+                // Restablecer las secuencias (resetear los contadores de ID)
+                em.createNativeQuery("ALTER SEQUENCE sensortemperatura_id_seq RESTART WITH 1").executeUpdate();
+                em.createNativeQuery("ALTER SEQUENCE incidente_id_seq RESTART WITH 1").executeUpdate();
+                em.createNativeQuery("ALTER SEQUENCE heladera_id_seq RESTART WITH 1").executeUpdate();
+                em.createNativeQuery("ALTER SEQUENCE heladera_viandas_id_seq RESTART WITH 1").executeUpdate();
 
-            // Confirmar la transacción
-            transaction.commit();
+                em.getTransaction().commit();
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (transaction.isActive()) {
-                transaction.rollback();  // Revertir si ocurre un error
+            } catch (RuntimeException e) {
+                if (em.getTransaction().isActive()) {
+                    em.getTransaction().rollback();
+                }
+                throw e;
+            } finally {
+                // Cerrar el EntityManager
+                em.close();
             }
-        } finally {
-            entityManager.close();
-        }
     }
 
 
