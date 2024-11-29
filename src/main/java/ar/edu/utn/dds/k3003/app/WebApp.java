@@ -101,7 +101,7 @@ public class WebApp {
         channel = initialCloudAMQPTopicConfiguration();
         setupConsumerTemperatura(heladeraController);
         setupConsumerMovimiento();
-        cronRevisadorUltimaTemperaturaSeteadaEnHeladeras();
+        //cronRevisadorUltimaTemperaturaSeteadaEnHeladeras();
         cronTemperaturaReporteContinuo(heladeraController);
     }
 
@@ -241,7 +241,7 @@ public class WebApp {
                 List<Heladera> heladeras = heladeraController.obtenerTodasLasHeladeras();
                 for (Heladera heladera : heladeras) {
                     if(!heladerasExcluidasDeSeteoTemperatura.contains(heladera.getHeladeraId())) {
-                        TemperaturaDTO temperaturaDTO = new TemperaturaDTO(utils.randomNumberBetween(1,15), heladera.getHeladeraId(), LocalDateTime.now());
+                        TemperaturaDTO temperaturaDTO = new TemperaturaDTO(utils.randomNumberBetween(4,9), heladera.getHeladeraId(), LocalDateTime.now());
                         heladeraController.registrarTemperatura(temperaturaDTO);
                     }
                     else {
