@@ -1,5 +1,7 @@
 package ar.edu.utn.dds.k3003.app;
 
+import ar.edu.utn.dds.k3003.model.DTO.RetiroDTODay;
+import ar.edu.utn.dds.k3003.model.Incidente;
 import ar.edu.utn.dds.k3003.model.TipoSuscripcion;
 import ar.edu.utn.dds.k3003.utils.utilsNotifIncidentAndEvents;
 import ar.edu.utn.dds.k3003.facades.FachadaViandas;
@@ -13,6 +15,7 @@ import javax.persistence.TypedQuery;
 import java.time.LocalDateTime;
 import java.util.*;
 import static ar.edu.utn.dds.k3003.app.WebApp.incidenteService;
+import static sun.nio.ch.DatagramChannelImpl.AbstractSelectableChannels.forEach;
 
 public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
     private FachadaViandas fachadaViandas;
@@ -212,6 +215,22 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             entityManager.close();
         }
     }
+
+    public List<String> viandasEnHeladera(Integer heladeraID){
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try {
+            Heladera heladera = entityManager.find(Heladera.class, heladeraID);
+            return heladera.getViandas();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al buscar la heladera: " + e.getMessage());
+        } finally {
+            entityManager.getTransaction().commit();
+            entityManager.close();
+        }
+    }
+
     //TODO: REVISAR ESTA FUNCION ME HACE RUIDO
     public List<SuscripcionDTO> obtenerSuscripciones(Integer heladeraID){
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -253,6 +272,41 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
         }
     }
 
+    public void limpiarRetirosDelDia() {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try {
+            List<Heladera> heladeras = entityManager.createQuery("SELECT h FROM Heladera h", Heladera.class).getResultList();
+
+            for (Heladera heladera : heladeras) {
+                heladera.resetRetiroDelDia();
+            }
+            entityManager.getTransaction().commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+            entityManager.getTransaction().rollback();
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    public List<RetiroDTODay> obtenerRetirosDelDia(Integer heladeraId){
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try {
+            Heladera heladera = entityManager.find(Heladera.class, heladeraId);
+            if (heladera == null) {
+                throw new NoSuchElementException("No se encontró la heladera con ID: " + heladeraId);
+            }
+            return heladera.getRetirosDelDia();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            entityManager.close();
+        }
+    }
+
     @Override
     public void retirar(RetiroDTO retiroDTO) throws NoSuchElementException {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -275,6 +329,9 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
 
             this.avisoDeFaltantesPorRetirar(heladera);
             this.avisoCantidadViandasFaltantesParaLLenarse(heladera);
+
+            RetiroDTODay retiroDay = new RetiroDTODay(retiroDTO.getQrVianda(), retiroDTO.getTarjeta(), retiroDTO.getHeladeraId());
+            heladera.addRetiroDelDia(retiroDay);
 
             entityManager.merge(heladera);
 
@@ -488,6 +545,45 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             }
             e.printStackTrace();
             throw new RuntimeException("Error al habilitar la heladera: " + e.getMessage());
+        } finally {
+            entityManager.getTransaction().commit();
+            entityManager.close();
+        }
+    }
+
+    public List<Incidente> obtenerIncidenteHistorial(Integer heladeraId) {
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        try {
+            Heladera heladera = entityManager.find(Heladera.class, heladeraId);
+            if (heladera == null) {
+                throw new NoSuchElementException("No se encontró la heladera con ID: " + heladeraId);
+            }
+            return heladera.getIncidentesHistorial();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    public void agregarIncidenteHistorial(Integer heladeraId, Incidente incidente){
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        try{
+            Heladera heladera = entityManager.find(Heladera.class, heladeraId);
+            if (heladera == null) {
+                throw new NoSuchElementException("No se encontró la heladera con ID: " + heladeraId);
+            }
+            heladera.addIncidentesHistorial(incidente);
+            entityManager.merge(heladera);
+        }
+        catch (Exception e) {
+            if (entityManager.getTransaction().isActive()) {
+                entityManager.getTransaction().rollback();
+            }
+            e.printStackTrace();
+            throw new RuntimeException("Error al establecer el incidente en el historial: " + e.getMessage());
         } finally {
             entityManager.getTransaction().commit();
             entityManager.close();

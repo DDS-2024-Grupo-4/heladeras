@@ -3,8 +3,12 @@ package ar.edu.utn.dds.k3003.controller;
 import ar.edu.utn.dds.k3003.Service.IncidenteService;
 import ar.edu.utn.dds.k3003.app.Fachada;
 import ar.edu.utn.dds.k3003.model.DTO.HeladeraDtoPerso;
+import ar.edu.utn.dds.k3003.model.DTO.IncidenteDTO;
+import ar.edu.utn.dds.k3003.model.DTO.RetiroDTODay;
 import ar.edu.utn.dds.k3003.model.DTO.SuscripcionDTO;
+import ar.edu.utn.dds.k3003.model.DTO.ViandaDTO;
 import ar.edu.utn.dds.k3003.model.Heladera;
+import ar.edu.utn.dds.k3003.model.Incidente;
 import ar.edu.utn.dds.k3003.model.TipoSuscripcion;
 import ar.edu.utn.dds.k3003.utils.utilsMetrics;
 import ar.edu.utn.dds.k3003.facades.dtos.HeladeraDTO;
@@ -199,6 +203,72 @@ public class HeladeraController{
             context.result(e.getLocalizedMessage());
             context.status(HttpStatus.NOT_FOUND);
             context.result("Heladera sin temperaturas Seteadas");
+        }
+    }
+
+    public void obtenerRetirosDelDia(@NotNull Context context){
+        try{
+            Integer heladeraId = Integer.valueOf(context.pathParam("heladeraId"));
+            if (!fachada.existeHeladera(heladeraId)) {
+                throw new NoSuchElementException();
+            }
+            List<RetiroDTODay> retirosDelDia = fachada.obtenerRetirosDelDia(heladeraId);
+            context.json(retirosDelDia);
+            context.status(HttpStatus.OK);
+        }
+        catch(NoSuchElementException e){
+            context.result(e.getLocalizedMessage());
+            context.status(HttpStatus.BAD_REQUEST);
+            context.result("Heladera no encontrada");
+        }
+        catch (RuntimeException e){
+            context.result(e.getLocalizedMessage());
+            context.status(HttpStatus.NOT_FOUND);
+            context.result("Heladera sin retiros en el dia de la fecha");
+        }
+    }
+
+    public void viandasEnHeladera(@NotNull Context context){
+        try{
+            Integer heladeraId = Integer.valueOf(context.pathParam("heladeraId"));
+            if (!fachada.existeHeladera(heladeraId)) {
+                throw new NoSuchElementException();
+            }
+            List<String> viandasEnHeladera = fachada.viandasEnHeladera(heladeraId);
+            context.json(viandasEnHeladera);
+            context.status(HttpStatus.OK);
+        }
+        catch(NoSuchElementException e){
+            context.result(e.getLocalizedMessage());
+            context.status(HttpStatus.BAD_REQUEST);
+            context.result("Heladera no encontrada");
+        }
+        catch (RuntimeException e){
+            context.result(e.getLocalizedMessage());
+            context.status(HttpStatus.NOT_FOUND);
+            context.result("Heladera sin Viandas");
+        }
+    }
+
+    public void obtenerHistorialIncidentes(@NotNull Context context){
+        try{
+            Integer heladeraId = Integer.valueOf(context.pathParam("heladeraId"));
+            if (!fachada.existeHeladera(heladeraId)) {
+                throw new NoSuchElementException();
+            }
+            List<Incidente> incidentesHistorial = fachada.obtenerIncidenteHistorial(heladeraId);
+            context.json(incidentesHistorial);
+            context.status(HttpStatus.OK);
+        }
+        catch(NoSuchElementException e){
+            context.result(e.getLocalizedMessage());
+            context.status(HttpStatus.BAD_REQUEST);
+            context.result("Heladera no encontrada");
+        }
+        catch (RuntimeException e){
+            context.result(e.getLocalizedMessage());
+            context.status(HttpStatus.NOT_FOUND);
+            context.result("Heladera sin historial");
         }
     }
 

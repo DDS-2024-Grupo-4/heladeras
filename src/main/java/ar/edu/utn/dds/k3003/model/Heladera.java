@@ -1,5 +1,8 @@
 package ar.edu.utn.dds.k3003.model;
 
+import ar.edu.utn.dds.k3003.facades.dtos.RetiroDTO;
+import ar.edu.utn.dds.k3003.model.DTO.RetiroDTODay;
+
 import javax.persistence.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -30,6 +33,12 @@ public class Heladera {
     private Integer umbralTemperatura;
     private LocalDateTime tiempoUltimaTemperaturaMaxima;
     private LocalDateTime tiempoUltimaTemperaturaMinima;
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "heladeraId", referencedColumnName = "heladeraId")
+    private List<Incidente> incidentesHistorial = new ArrayList<>();
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "heladeraId", referencedColumnName = "heladeraId")
+    private List<RetiroDTODay> retirosDelDia = new ArrayList<>();
 
     //Campos para FALLO DE DESCONEXION
     private Integer tiempoMaximoUltimoReciboTemperatura;
@@ -82,6 +91,10 @@ public class Heladera {
 
     public Map<Integer, LocalDateTime> obtenerTemperaturaHeladera(){
         return this.sensorTemperatura.obtenerTodasLasTemperaturas();
+    }
+
+    public List<String> getViandas(){
+        return this.viandas;
     }
 
     public void guardarVianda(String viandaQR) throws Exception {
@@ -245,6 +258,27 @@ public class Heladera {
         return this.estadoActivo;
     }
 
+    public void addIncidentesHistorial(Incidente incidente){
+        this.incidentesHistorial.add(incidente);
+    }
+
+    public List<Incidente> getIncidentesHistorial(){
+        return this.incidentesHistorial;
+    }
+
+    public void addRetiroDelDia(RetiroDTODay retiroDTODay) {
+        this.retirosDelDia.add(retiroDTODay);
+    }
+
+    public void resetRetiroDelDia(){
+        if (this.retirosDelDia != null) {
+            this.retirosDelDia.clear();
+        }
+    }
+
+    public List<RetiroDTODay> getRetirosDelDia(){
+        return this.retirosDelDia;
+    }
     @Override
     public String toString() {
         return "Heladera{" +

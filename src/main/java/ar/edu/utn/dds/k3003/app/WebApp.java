@@ -18,6 +18,10 @@ import com.rabbitmq.client.DeliverCallback;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import javax.persistence.EntityManagerFactory;
@@ -30,8 +34,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
 
 public class WebApp {
@@ -50,7 +52,7 @@ public class WebApp {
         startEntityManagerFactory();
         Dotenv dotenv = Dotenv.load();
         var objectMapper = createObjectMapper();
-        var fachada = new Fachada(entityManagerFactory);
+        Fachada fachada = new Fachada(entityManagerFactory);
         fachada.setViandasProxy(new ViandasProxy(objectMapper));
         var port = Integer.parseInt(dotenv.get("PORT"));
         tiempoSeteoNuevasTemperaturas =  Integer.parseInt(dotenv.get("TIMECRON_NEW_TEMPERATURES"));
@@ -76,6 +78,9 @@ public class WebApp {
         app.post("/suscripciones", heladeraController::registrarSuscripcion);
         app.get("/heladeras/{heladeraId}/reportarFalla", heladeraController::reportarFalla);
         app.get("/heladeras/{heladeraId}/arreglarFalla", heladeraController::arreglarFalla);
+        app.get("/heladeras/{heladeraId}/viandasEnHeladera", heladeraController::viandasEnHeladera);
+        app.get("/heladera/{heladeraId}/obtenerHistorialIncidentes", heladeraController::obtenerHistorialIncidentes);
+        app.get("/heladera/{heladeraId}/obtenerRetirosDelDia", heladeraController::obtenerRetirosDelDia);
         app.delete("/{heladeraId}/suscripciones", heladeraController::eliminarSuscripcion);
         app.get("/{heladeraId}/suscripciones", heladeraController::obtenerSuscripciones);
         //TODO borrar esto es unicamente prueba
@@ -204,6 +209,27 @@ public class WebApp {
             incidenteService.controlarTiempoDeEsperaMaximoTemperaturas();
         };
         scheduler.scheduleAtFixedRate(tarea, 0, tiempoRevisarUltimaTemperaturaSeteada, TimeUnit.SECONDS);
+    }
+
+    private static void cronReseteadorDeRetirosDelDia(Fachada fachada) {
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        // Hora de ejecución deseada (00:00:00)
+        int HORA_EJECUCION = 0;
+        int MINUTO_EJECUCION = 0;
+        int SEGUNDO_EJECUCION = 0;
+        LocalTime ahora = LocalTime.now();
+        LocalTime horaEjecucion = LocalTime.of(HORA_EJECUCION, MINUTO_EJECUCION, SEGUNDO_EJECUCION);
+        if (ahora.isAfter(horaEjecucion)) {
+            horaEjecucion = horaEjecucion.plusHours(24);
+        }
+        long tiempoHastaProximaEjecucion = ChronoUnit.SECONDS.between(ahora, horaEjecucion);
+
+        Runnable tarea = () -> {
+            fachada.limpiarRetirosDelDia();
+        };
+
+        // Programar la tarea para que se ejecute a la hora calculada y luego cada 24 horas
+        scheduler.scheduleAtFixedRate(tarea, tiempoHastaProximaEjecucion, 24, TimeUnit.HOURS);
     }
 
     //TODO BORRAR ESTA PARTE ES SOLO DE PRUEBA EN TIEMPO DE EJECUCION
