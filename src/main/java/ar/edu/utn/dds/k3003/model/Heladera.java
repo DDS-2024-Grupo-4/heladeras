@@ -35,9 +35,6 @@ public class Heladera {
     private LocalDateTime tiempoUltimaTemperaturaMinima;
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "heladeraId", referencedColumnName = "heladeraId")
-    private List<Incidente> incidentesHistorial = new ArrayList<>();
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "heladeraId", referencedColumnName = "heladeraId")
     private List<RetiroDTODay> retirosDelDia = new ArrayList<>();
 
     //Campos para FALLO DE DESCONEXION
@@ -260,14 +257,6 @@ public class Heladera {
     }
     public Boolean estaActiva(){
         return this.estadoActivo;
-    }
-
-    public void addIncidentesHistorial(Incidente incidente){
-        this.incidentesHistorial.add(incidente);
-    }
-
-    public List<Incidente> getIncidentesHistorial(){
-        return this.incidentesHistorial;
     }
 
     public void addRetiroDelDia(RetiroDTODay retiroDTODay) {

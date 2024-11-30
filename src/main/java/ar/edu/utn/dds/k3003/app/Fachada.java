@@ -553,39 +553,17 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
 
     public List<Incidente> obtenerIncidenteHistorial(Integer heladeraId) {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
+         entityManager.getTransaction().begin();
         try {
             Heladera heladera = entityManager.find(Heladera.class, heladeraId);
             if (heladera == null) {
                 throw new NoSuchElementException("No se encontró la heladera con ID: " + heladeraId);
             }
-            return heladera.getIncidentesHistorial();
+            return entityManager.createNativeQuery("SELECT * FROM incidente WHERE heladeraid = " + heladera.getHeladeraId().toString()).getResultList();
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         } finally {
-            entityManager.close();
-        }
-    }
-
-    public void agregarIncidenteHistorial(Integer heladeraId, Incidente incidente){
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        entityManager.getTransaction().begin();
-        try{
-            Heladera heladera = entityManager.find(Heladera.class, heladeraId);
-            if (heladera == null) {
-                throw new NoSuchElementException("No se encontró la heladera con ID: " + heladeraId);
-            }
-            heladera.addIncidentesHistorial(incidente);
-            entityManager.merge(heladera);
-        }
-        catch (Exception e) {
-            if (entityManager.getTransaction().isActive()) {
-                entityManager.getTransaction().rollback();
-            }
-            e.printStackTrace();
-            throw new RuntimeException("Error al establecer el incidente en el historial: " + e.getMessage());
-        } finally {
-            entityManager.getTransaction().commit();
             entityManager.close();
         }
     }

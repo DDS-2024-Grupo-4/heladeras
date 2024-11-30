@@ -42,7 +42,6 @@ public class IncidenteService {
         fachadaHeladera.avisoIncidenteDesperfectoHeladera(incidente.getHeladeraId());
           //Aca nos encargamos de avisar a los topics en caso que sea necesario
         Incidente incidenteGuardado = guardadoNuevoIncidente(incidente);
-        fachadaHeladera.agregarIncidenteHistorial(incidente.getHeladeraId(), incidente);
         if (incidenteGuardado.getTipoIncidente().equals(TipoIncidente.FallaEnConexion)){
           utilsNotifIncidentAndEvents.notificarFallaEnConexionEnTopic(incidenteGuardado);
         }

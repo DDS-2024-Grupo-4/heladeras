@@ -79,9 +79,9 @@ public class WebApp {
         app.get("/heladeras/{heladeraId}/reportarFalla", heladeraController::reportarFalla);
         app.get("/heladeras/{heladeraId}/arreglarFalla", heladeraController::arreglarFalla);
         app.get("/heladeras/{heladeraId}/viandasEnHeladera", heladeraController::viandasEnHeladera);
-        app.get("/heladera/{heladeraId}/obtenerHistorialIncidentes", heladeraController::obtenerHistorialIncidentes);
-        app.get("/heladera/{heladeraId}/obtenerRetirosDelDia", heladeraController::obtenerRetirosDelDia);
-        app.get("/heladera/{heladeraId}/cantidadViandasHastaLLenar", heladeraController::cantidadViandasHastaLLenar);
+        app.get("/heladeras/{heladeraId}/obtenerHistorialIncidentes", heladeraController::obtenerHistorialIncidentes);
+        app.get("/heladeras/{heladeraId}/obtenerRetirosDelDia", heladeraController::obtenerRetirosDelDia);
+        app.get("/heladeras/{heladeraId}/cantidadViandasHastaLLenar", heladeraController::cantidadViandasHastaLLenar);
         app.delete("/{heladeraId}/suscripciones", heladeraController::eliminarSuscripcion);
         app.get("/{heladeraId}/suscripciones", heladeraController::obtenerSuscripciones);
         //TODO borrar esto es unicamente prueba
