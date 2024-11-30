@@ -360,20 +360,20 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
                 throw new NoSuchElementException("Sensor no encontrado para la Heladera con ID: " + temperaturaDTO.getHeladeraId());
             }
 
-            System.out.println("\n Temperatura recibida para setear: " + temperaturaDTO.getTemperatura());
+            //System.out.println("\n Temperatura recibida para setear: " + temperaturaDTO.getTemperatura());
             sensor.setNuevaTemperatura(temperaturaDTO.getTemperatura(), temperaturaDTO.getFechaMedicion());
             heladera.setTiempoUltimaTemperaturaRecibida(temperaturaDTO.getFechaMedicion());
-            System.out.printf("Tiempo restante hasta error -> " + heladera.tiempoRestanteHastaError());
+            //System.out.printf("Tiempo restante hasta error -> " + heladera.tiempoRestanteHastaError());
             entityManager.merge(sensor);
             entityManager.merge(heladera);
             entityManager.getTransaction().commit();
             // Verificar exceso de temperatura
             if (incidenteService.verificarExcesoTemperatura(heladera, temperaturaDTO)) {
-                throw new RuntimeException("Alerta: Alta temperatura detectada.\n");
+                //throw new RuntimeException("Alerta: Alta temperatura detectada.\n");
             }
             // Verificar bajo temperatura
             else if (incidenteService.verificarBajoTemperatura(heladera, temperaturaDTO)) {
-                throw new RuntimeException("Alerta: Bajo temperatura detectada.\n");
+                //throw new RuntimeException("Alerta: Bajo temperatura detectada.\n");
             }
             entityManager.getTransaction().begin();
 
@@ -389,7 +389,7 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
                 entityManager.getTransaction().rollback();
             }
             e.printStackTrace();
-            throw new RuntimeException("Error al guardar la temperatura en la heladera: " + e.getMessage());
+            //throw new RuntimeException("Error al guardar la temperatura en la heladera: " + e.getMessage());
         } finally {
             if (entityManager.getTransaction().isActive()) {
                 entityManager.getTransaction().commit();

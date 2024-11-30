@@ -170,7 +170,7 @@ public class HeladeraController{
     public void registrarTemperatura(TemperaturaDTO temperaturaDTO) throws RuntimeException {
         try{
             if(!fachada.heladeraHabilitada(temperaturaDTO.getHeladeraId())){
-                throw new RuntimeException("La heladera " + temperaturaDTO.getHeladeraId() + " no está habilitada, imposible setearle temperatura");
+                //throw new RuntimeException("La heladera " + temperaturaDTO.getHeladeraId() + " no está habilitada, imposible setearle temperatura");
             }
             fachada.temperatura(temperaturaDTO);
         }
