@@ -234,7 +234,7 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
                 SuscripcionDTO suscripcionDTO = new SuscripcionDTO();
                 suscripcionDTO.colaboradorId = colaboradorId;
                 suscripcionDTO.heladeraId = heladeraID;
-                suscripcionDTO.tipoSuscripcion = TipoSuscripcion.FaltanteViandas;
+                suscripcionDTO.tipoSuscripcion = TipoSuscripcion.ViandasDisponibles;
                 suscripcionDTO.cantidadN = cantidadN;
                 suscripciones.add(suscripcionDTO);
             });
