@@ -27,7 +27,7 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
     public void avisoDeFaltantesPorRetirar(Heladera heladera){
         System.out.printf("Aviso de faltantes por retirar - Heladera ID: %d\n", heladera.getHeladeraId());
         heladera.getColaboradorIDsuscripcionNViandasDisponibles().forEach((colaboradorId, cantidadN) -> {
-            if(cantidadN <= heladera.cantidadDeViandas()){
+            if(cantidadN >= heladera.cantidadDeViandas()){
                 SuscripcionDTO suscripcionDTO = new SuscripcionDTO();
                 suscripcionDTO.colaboradorId = colaboradorId;
                 suscripcionDTO.heladeraId = heladera.getHeladeraId();
@@ -41,7 +41,7 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
     public void avisoCantidadViandasFaltantesParaLLenarse(Heladera heladera){
         System.out.printf("Aviso de faltantes para llenarse- Heladera ID: %d\n", heladera.getHeladeraId());
         heladera.getColaboradorIDsuscripcionCantidadFaltantesViandas().forEach((colaboradorId, cantidadN) -> {
-            if(cantidadN <= heladera.cantidadDeViandasQueQuedanHastaLlenar())
+            if(cantidadN >= heladera.cantidadDeViandasQueQuedanHastaLlenar())
             {
                 SuscripcionDTO suscripcionDTO = new SuscripcionDTO();
                 suscripcionDTO.colaboradorId = colaboradorId;
