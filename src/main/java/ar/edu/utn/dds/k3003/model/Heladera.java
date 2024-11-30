@@ -66,8 +66,8 @@ public class Heladera {
         this.direccion = generarDireccionAleatoria();
         this.temperaturaMaxima = randomNumberBetween(10,15);
         this.temperaturaMinima = randomNumberBetween(0,3);
-        this.umbralTemperatura = randomNumberBetween(4,6);
-        this.tiempoMaximoUltimoReciboTemperatura = randomNumberBetween(3,4);
+        this.umbralTemperatura = randomNumberBetween(1,2);
+        this.tiempoMaximoUltimoReciboTemperatura = randomNumberBetween(1,4);
     }
 
     public void setHeladeraId(Integer id){ this.heladeraId = id;};
