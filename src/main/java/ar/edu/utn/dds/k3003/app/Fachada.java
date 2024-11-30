@@ -27,24 +27,29 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
     public void avisoDeFaltantesPorRetirar(Heladera heladera){
         System.out.printf("Aviso de faltantes por retirar - Heladera ID: %d\n", heladera.getHeladeraId());
         heladera.getColaboradorIDsuscripcionNViandasDisponibles().forEach((colaboradorId, cantidadN) -> {
-            SuscripcionDTO suscripcionDTO = new SuscripcionDTO();
-            suscripcionDTO.colaboradorId = colaboradorId;
-            suscripcionDTO.heladeraId = heladera.getHeladeraId();
-            suscripcionDTO.tipoSuscripcion = TipoSuscripcion.ViandasDisponibles;
-            suscripcionDTO.cantidadN = heladera.cantidadDeViandas();
-            utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
+            if(cantidadN <= heladera.cantidadDeViandas()){
+                SuscripcionDTO suscripcionDTO = new SuscripcionDTO();
+                suscripcionDTO.colaboradorId = colaboradorId;
+                suscripcionDTO.heladeraId = heladera.getHeladeraId();
+                suscripcionDTO.tipoSuscripcion = TipoSuscripcion.ViandasDisponibles;
+                suscripcionDTO.cantidadN = heladera.cantidadDeViandas();
+                utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
+            }
         });
     }
 
     public void avisoCantidadViandasFaltantesParaLLenarse(Heladera heladera){
-        System.out.printf("Aviso de faltantes por retirar - Heladera ID: %d\n", heladera.getHeladeraId());
+        System.out.printf("Aviso de faltantes para llenarse- Heladera ID: %d\n", heladera.getHeladeraId());
         heladera.getColaboradorIDsuscripcionCantidadFaltantesViandas().forEach((colaboradorId, cantidadN) -> {
-            SuscripcionDTO suscripcionDTO = new SuscripcionDTO();
-            suscripcionDTO.colaboradorId = colaboradorId;
-            suscripcionDTO.heladeraId = heladera.getHeladeraId();
-            suscripcionDTO.tipoSuscripcion = TipoSuscripcion.FaltanteViandas;
-            suscripcionDTO.cantidadN = heladera.cantidadDeViandasQueQuedanHastaLlenar();;
-            utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
+            if(cantidadN <= heladera.cantidadDeViandasQueQuedanHastaLlenar())
+            {
+                SuscripcionDTO suscripcionDTO = new SuscripcionDTO();
+                suscripcionDTO.colaboradorId = colaboradorId;
+                suscripcionDTO.heladeraId = heladera.getHeladeraId();
+                suscripcionDTO.tipoSuscripcion = TipoSuscripcion.FaltanteViandas;
+                suscripcionDTO.cantidadN = heladera.cantidadDeViandasQueQuedanHastaLlenar();
+                utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
+            }
         });
     }
 
