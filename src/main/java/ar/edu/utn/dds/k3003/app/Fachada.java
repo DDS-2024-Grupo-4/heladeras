@@ -159,9 +159,9 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             fachadaViandas.modificarHeladera(vianda.getCodigoQR(), heladeraID);
 
             heladera.guardarVianda(qrVianda);
-
-            this.avisoCantidadViandasFaltantesParaLLenarse(heladera);
-            this.avisoDeFaltantesPorRetirar(heladera);
+            System.out.println("Procediendo a dar aviso de faltante Viandas y por retirar\n" );
+            avisoCantidadViandasFaltantesParaLLenarse(heladera);
+            avisoDeFaltantesPorRetirar(heladera);
 
             entityManager.merge(heladera);
 
@@ -327,8 +327,9 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
 
             heladera.retirarVianda(retiroDTO.getQrVianda());
 
-            this.avisoDeFaltantesPorRetirar(heladera);
-            this.avisoCantidadViandasFaltantesParaLLenarse(heladera);
+            System.out.println("\n\n\nProcediendo a dar aviso de faltante Viandas y por retirar\n\n\n" );
+            avisoDeFaltantesPorRetirar(heladera);
+            avisoCantidadViandasFaltantesParaLLenarse(heladera);
 
             RetiroDTODay retiroDay = new RetiroDTODay(retiroDTO.getQrVianda(), retiroDTO.getTarjeta(), retiroDTO.getHeladeraId());
             heladera.addRetiroDelDia(retiroDay);
@@ -362,20 +363,16 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
             System.out.println("\n Temperatura recibida para setear: " + temperaturaDTO.getTemperatura());
             sensor.setNuevaTemperatura(temperaturaDTO.getTemperatura(), temperaturaDTO.getFechaMedicion());
             heladera.setTiempoUltimaTemperaturaRecibida(temperaturaDTO.getFechaMedicion());
-
-            System.out.println(heladera);
             System.out.printf("Tiempo restante hasta error -> " + heladera.tiempoRestanteHastaError());
             entityManager.merge(sensor);
             entityManager.merge(heladera);
             entityManager.getTransaction().commit();
             // Verificar exceso de temperatura
             if (incidenteService.verificarExcesoTemperatura(heladera, temperaturaDTO)) {
-                System.out.println("Alerta: Alta temperatura detectada.\n");
                 throw new RuntimeException("Alerta: Alta temperatura detectada.\n");
             }
             // Verificar bajo temperatura
             else if (incidenteService.verificarBajoTemperatura(heladera, temperaturaDTO)) {
-                System.out.println("Alerta: Bajo temperatura detectada.\n");
                 throw new RuntimeException("Alerta: Bajo temperatura detectada.\n");
             }
             entityManager.getTransaction().begin();
