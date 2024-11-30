@@ -26,48 +26,26 @@ public class Fachada implements ar.edu.utn.dds.k3003.facades.FachadaHeladeras {
 
     public void avisoDeFaltantesPorRetirar(Heladera heladera){
         System.out.printf("Aviso de faltantes por retirar - Heladera ID: %d\n", heladera.getHeladeraId());
-
-        Integer cantidadDeViandasActual = heladera.cantidadDeViandas();
-        System.out.printf("Cantidad de viandas actuales: %d\n", cantidadDeViandasActual);
-
-        List<Long> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionNViandasDisponiblesFiltrado();
-        System.out.printf("Número de colaboradores a avisar: %d\n", colaboradoresParaAvisar.size());
-
-        for (Long colaboradorID : colaboradoresParaAvisar) {
-            System.out.printf("Enviando notificación al colaborador con ID: %d\n", colaboradorID);
-
-            SuscripcionDTO suscripcionDTO = new SuscripcionDTO(
-                colaboradorID, heladera.getHeladeraId(),
-                TipoSuscripcion.ViandasDisponibles, cantidadDeViandasActual);
-
+        heladera.getColaboradorIDsuscripcionNViandasDisponibles().forEach((colaboradorId, cantidadN) -> {
+            SuscripcionDTO suscripcionDTO = new SuscripcionDTO();
+            suscripcionDTO.colaboradorId = colaboradorId;
+            suscripcionDTO.heladeraId = heladera.getHeladeraId();
+            suscripcionDTO.tipoSuscripcion = TipoSuscripcion.ViandasDisponibles;
+            suscripcionDTO.cantidadN = heladera.cantidadDeViandas();
             utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
-            System.out.printf("Notificación enviada al colaborador con ID: %d\n", colaboradorID);
-        }
-
-        System.out.println("Finalizó el proceso de aviso de faltantes por retirar.");
+        });
     }
 
     public void avisoCantidadViandasFaltantesParaLLenarse(Heladera heladera){
-        System.out.printf("Aviso de faltantes de viandas para llenarse - Heladera ID: %d\n", heladera.getHeladeraId());
-
-        int cantidadFaltanteHastaLlenarse = heladera.cantidadDeViandasQueQuedanHastaLlenar();
-        System.out.printf("Cantidad de viandas faltantes hasta llenarse: %d\n", cantidadFaltanteHastaLlenarse);
-
-        List<Long> colaboradoresParaAvisar = heladera.getColaboradorIDsuscripcionCantidadFaltantesViandasByNumber();
-        System.out.printf("Número de colaboradores a avisar: %d\n", colaboradoresParaAvisar.size());
-
-        for (Long colaboradorID : colaboradoresParaAvisar) {
-            System.out.printf("Enviando notificación al colaborador con ID: %d\n", colaboradorID);
-
-            SuscripcionDTO suscripcionDTO = new SuscripcionDTO(
-                colaboradorID, heladera.getHeladeraId(),
-                TipoSuscripcion.FaltanteViandas, cantidadFaltanteHastaLlenarse);
-
+        System.out.printf("Aviso de faltantes por retirar - Heladera ID: %d\n", heladera.getHeladeraId());
+        heladera.getColaboradorIDsuscripcionNViandasDisponibles().forEach((colaboradorId, cantidadN) -> {
+            SuscripcionDTO suscripcionDTO = new SuscripcionDTO();
+            suscripcionDTO.colaboradorId = colaboradorId;
+            suscripcionDTO.heladeraId = heladera.getHeladeraId();
+            suscripcionDTO.tipoSuscripcion = TipoSuscripcion.FaltanteViandas;
+            suscripcionDTO.cantidadN = heladera.cantidadDeViandasQueQuedanHastaLlenar();;
             utilsNotifIncidentAndEvents.notificarAColaboradorDeSuSuscripcion(suscripcionDTO);
-            System.out.printf("Notificación enviada al colaborador con ID: %d\n", colaboradorID);
-        }
-
-        System.out.println("Finalizó el proceso de aviso de faltantes para llenarse.");
+        });
     }
 
 
